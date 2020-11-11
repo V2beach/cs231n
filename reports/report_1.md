@@ -22,11 +22,14 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 ### 向量范数度量图片差异
 **范数，是具有“长度”概念的函数，为向量空间内的所有向量赋予大小**，L1和L2距离指的就是两个向量的差向量的L1和L2范数，其中向量的L2范数类似于矩阵的F范数。
 
+<div align=center>
 <img src="assets/L1L2_distance.png" width="70%" height="70%">
+</div>
+
 
 ### Assignment1 k-NN
 
-##### 验证集用于超参数调优及交叉验证
+### 验证集用于超参数调优及交叉验证
 
 # Lecture3 Loss Functions and Optimization
 
