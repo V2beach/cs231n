@@ -1,5 +1,7 @@
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-<script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});</script>
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+<script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});
+</script>
 <!-- <script type="text/javascript" src="path-to-mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
 
 # Lecture1 Course Introduction
@@ -42,7 +44,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 其传达的意思举一个二维例子就很好理解，比如$\vec{I_1} = (0, 1),\vec{I_2} = (1, 0), \vec{I_2} - \vec{I_1} = (1, -1) \Rightarrow d_1 = 2, d_2 = 2$，如果将坐标系逆时针转动45°，$\vec{I_1} = (\sqrt{2}/2, \sqrt{2}/2),\vec{I_2} = (-\sqrt{2}/2, \sqrt{2}/2), \vec{I_2} - \vec{I_1} = (-\sqrt{2}, 0) \Rightarrow d_1 = \sqrt{2}, d_2 = 2$，旋转坐标系会导致L1改变，但L2不变。
 
-理论上说，当图像包含意义明确的，旋转坐标系或对向量进行其他变换后对其产生影响的特征时，用L1范数衡量距离会优于L2，而如果用的是一些不那么明确的特征，则使用更普遍的L2距离，[assignment-knn-InlineQuestion2](https://github.com/V2beach/cs231n/blob/main/assignment1/knn.ipynb/L1-distance)中详细地回答过这一点，但在实际计算时最好的办法是两种都尝试一下。
+理论上说，当图像包含意义明确的，旋转坐标系或对向量进行其他变换后对其产生影响的特征时，用L1范数衡量距离会优于L2，而如果用的是一些不那么明确的特征，则使用更普遍的L2距离，[assignment-knn-InlineQuestion2](https://github.com/V2beach/cs231n/blob/main/assignment1/knn.ipynb#L1-distance)中详细地回答过这一点，但在实际计算时最好的办法是两种都尝试一下。
 
 ### Assignment1 k-NN
 
