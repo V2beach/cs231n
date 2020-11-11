@@ -1,0 +1,1045 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Multiclass SVM optimization demo</title>
+
+<!-- Mathjax -->
+<script async="" src="Multiclass%20SVM%20optimization%20demo_files/analytics.js"></script><script src="Multiclass%20SVM%20optimization%20demo_files/MathJax.js" id="">
+</script>
+
+<!-- jqueryui -->
+<link href="Multiclass%20SVM%20optimization%20demo_files/jquery-ui.css" rel="stylesheet">
+
+<script type="text/javascript" src="Multiclass%20SVM%20optimization%20demo_files/d3.js"></script>
+<script src="Multiclass%20SVM%20optimization%20demo_files/jquery-1.js"></script>
+<script src="Multiclass%20SVM%20optimization%20demo_files/jquery-ui.js"></script>
+
+<link href="Multiclass%20SVM%20optimization%20demo_files/css.css" rel="stylesheet" type="text/css">
+
+<!-- Google Analytics -->
+<script>
+(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+ga('create', 'UA-46895817-2', 'auto');
+ga('send', 'pageview');
+</script>
+
+<style type="text/css">
+body {
+  font-family: 'Open Sans', sans-serif;
+  font-size: 14px;
+}
+
+h1 {
+  text-align: center;
+}
+canvas { 
+    border: 1px solid #555;
+    margin-top: 10px;
+}
+
+.nf {
+  border: 1px solid #555;
+  margin-bottom: 2px;
+  text-align: center;
+  padding: 5px;
+}
+
+.col {
+  display: inline-block;
+  width: 50px;
+  margin: 2px;
+  padding: 2px;
+  vertical-align: top;
+}
+.colsep {
+  border-right: 4px solid black;
+}
+.ns {
+  font-weight: bold;
+  background-color: #EEE;
+}
+.wcol {
+  display: inline-block;
+  width: 50px;
+  margin: 2px;
+  padding: 2px;
+  vertical-align: top;
+}
+.ud {
+  font-size: 20px;
+  text-align: center;
+  height: 22px;
+  cursor: pointer;
+  -webkit-user-select: none; /* Chrome/Safari */        
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* IE10+ */
+}
+.wdiv {
+  border: 1px solid #555;
+  text-align: center;
+  margin-top: 2px;
+  height: 40px;
+  padding-top: 10px;
+}
+.wval {
+  font-weight: bold;
+}
+.wgrad {
+  font-style: italic;
+  color: red;
+}
+#intro {
+  border-bottom: 1px solid black;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+}
+#wrap {
+  width: 1050px;
+}
+.numvis {
+  font-family: 'Courier New', Courier, 'Lucida Sans Typewriter', 'Lucida Typewriter', monospace;
+}
+#svmformdiv {
+  color: #999;
+}
+hr {
+  color: #333;
+  background-color: #333;
+  height: 1px;
+  border: 0;
+}
+</style>
+
+<script type="text/javascript">
+
+var data = new Array(9);
+var labels = new Array(9);
+data[0] = [0.5, 0.4];
+data[1] = [0.8, 0.3];
+data[2] = [0.3, 0.8];
+data[3] = [-0.4, 0.3];
+data[4] = [-0.3, 0.7];
+data[5] = [-0.7, 0.2];
+data[6] = [0.7, -0.4];
+data[7] = [0.5, -0.6];
+data[8] = [-0.4, -0.5];
+labels[0] = 0;
+labels[1] = 0;
+labels[2] = 0;
+labels[3] = 1;
+labels[4] = 1;
+labels[5] = 1;
+labels[6] = 2;
+labels[7] = 2;
+labels[8] = 2;
+N = data.length;
+D = 2;
+
+// for(var i=0;i<data.length;i++) {
+//   for(var j=0;j<2;j++) {
+//     data[i][j] += 1.0;
+//   }
+// }
+
+var data_color = {};
+data_color[0] = 'rgb(100,100,200)';
+data_color[1] = 'rgb(100,200,100)';
+data_color[2] = 'rgb(200,100,100)';
+
+var data_color_light = {};
+data_color_light[0] = 'rgb(200,200,250)';
+data_color_light[1] = 'rgb(200,250,200)';
+data_color_light[2] = 'rgb(250,200,200)';
+
+
+// drawing
+ss = 200;
+HEIGHT = 400;
+WIDTH = 400;
+
+// parameters for the three classes
+var W = [1.0, 2.0, 2, -4, 3, -1];
+var b = [0.0, 0.5, -0.5];
+
+function drawCircle(x, y, r){
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2, true); 
+  ctx.closePath();
+  ctx.stroke();
+  ctx.fill();
+}
+
+/*
+var JET_colormap = function() {
+}
+JET_colormap.prototype = {
+  interpolate: function(val, y0, x0, y1, x1) {
+    return (val-x0)*(y1-y0)/(x1-x0) + y0;
+  },
+  base: function(val) {
+    if ( val <= -0.75 ) return 0;
+    else if ( val <= -0.25 ) return this.interpolate( val, 0.0, -0.75, 1.0, -0.25 );
+    else if ( val <= 0.25 ) return 1.0;
+    else if ( val <= 0.75 ) return this.interpolate( val, 1.0, 0.25, 0.0, 0.75 );
+    else return 0.0;
+  },
+  red: function(v) {
+    return this.base(v - 0.5);
+  },
+  green: function(v) {
+    return this.base(v);
+  },
+  blue: function(v) {
+    return this.base(v + 0.5);
+  },
+  rgb: function(v) {
+    // v is between -1 and 1
+    var r = Math.floor(this.red(v)*255);
+    var g = Math.floor(this.green(v)*255);
+    var b = Math.floor(this.blue(v)*255);
+    return 'rgb('+r+','+g+','+b+')';
+  },
+}
+var JET = new JET_colormap();
+*/
+
+
+var drawAll = function() {
+  ctx.clearRect(0,0,WIDTH,HEIGHT);
+  drawDecisions();
+  drawAxes();
+  drawData();
+  drawClassifiers();
+}
+
+var drawAxes = function() {
+  // draw axes
+  ctx.beginPath();
+  ctx.strokeStyle = 'rgb(0,0,0)';
+  ctx.lineWidth = 1;
+  ctx.moveTo(0, HEIGHT/2);
+  ctx.lineTo(WIDTH, HEIGHT/2);
+  ctx.moveTo(WIDTH/2, 0);
+  ctx.lineTo(WIDTH/2, HEIGHT);
+  ctx.stroke();
+}
+
+var drawDecisions = function() {
+  // draw decisions in the grid
+  var density= 5.0;
+  for(var x=0.0; x<=WIDTH; x+= density) {
+    for(var y=0.0; y<=HEIGHT; y+= density) {
+      // forward this point through
+      var dx = (x-WIDTH/2)/ss;
+      var dy = (y-HEIGHT/2)/ss;
+      
+      var s0 = W[0]*dx + W[1]*dy + b[0];
+      var s1 = W[2]*dx + W[3]*dy + b[1];
+      var s2 = W[4]*dx + W[5]*dy + b[2];
+
+      if(s0 > s1 && s0 > s2) ctx.fillStyle = data_color_light[0];
+      if(s1 > s0 && s1 > s2) ctx.fillStyle = data_color_light[1];
+      if(s2 > s0 && s2 > s1) ctx.fillStyle = data_color_light[2];
+
+      ctx.fillRect(x-density/2-1, y-density-1, density+2, density+2);
+    }
+  }
+}
+
+var drawData = function() {
+
+  // draw datapoints. Draw support vectors larger
+  ctx.strokeStyle = 'rgb(0,0,0)';
+  ctx.lineWidth = 1;
+  for(var i=0;i<N;i++) {
+    ctx.fillStyle = data_color[labels[i]];
+    drawCircle(data[i][0]*ss+WIDTH/2, data[i][1]*ss+HEIGHT/2, 6);
+  }
+}
+
+var drawClassifiers = function() {
+
+  for(var i=0;i<3;i++) {
+    var wb = {};
+    wb.b = b[i];
+    wb.w = [W[2*i], W[2*i+1]];
+    ctx.strokeStyle = data_color[i];
+
+    var xs= [-5, 5, 0];
+    var ys= [0, 0, 0];
+    ys[0]= (-wb.b - wb.w[0]*xs[0])/wb.w[1];
+    ys[1]= (-wb.b - wb.w[0]*xs[1])/wb.w[1];
+    ys[2]= (-wb.b - wb.w[0]*xs[2])/wb.w[1];
+    ctx.fillStyle = 'rgb(0,0,0)';
+    ctx.lineWidth = 2;
+
+    ctx.beginPath();
+    // wx+b=0 line
+    ctx.moveTo(xs[0]*ss+WIDTH/2, ys[0]*ss+HEIGHT/2);
+    ctx.lineTo(xs[1]*ss+WIDTH/2, ys[1]*ss+HEIGHT/2);
+    ctx.stroke();
+
+    // draw arrow indicating increasing direction
+    ctx.beginPath();
+    var xx = xs[2]*ss+WIDTH/2;
+    var yy = ys[2]*ss+HEIGHT/2;
+    var xp = xx + wb.w[0]*20;
+    var yp = yy + wb.w[1]*20;
+    ctx.moveTo(xx, yy);
+    ctx.lineTo(xp, yp);
+
+    // lol sigh oh welll
+    var ax = xx - xp;
+    var ay = yy - yp;
+    var ad = Math.sqrt(ax*ax+ay*ay);
+    ax *= 15/ad; ay *= 15/ad; // 10 pixel arrows
+    var t = 0.5;
+    var ax2 = ax * Math.cos(t) - ay * Math.sin(t);
+    var ay2 = ax * Math.sin(t) + ay * Math.cos(t);
+    ctx.moveTo(xp, yp);
+    ctx.lineTo(xp+ax2, yp+ay2);
+    // copy paste lol
+    var ax = xx - xp;
+    var ay = yy - yp;
+    var ad = Math.sqrt(ax*ax+ay*ay);
+    ax *= 15/ad; ay *= 15/ad; // 10 pixel arrows
+    var t = -0.5;
+    var ax2 = ax * Math.cos(t) - ay * Math.sin(t);
+    var ay2 = ax * Math.sin(t) + ay * Math.cos(t);
+    ctx.moveTo(xp, yp);
+    ctx.lineTo(xp+ax2, yp+ay2);
+
+    ctx.stroke();
+
+
+    /*
+    // lighter, thinner lines
+    ctx.strokeStyle = data_color_light[i];
+    ctx.lineWidth = 1;
+
+    ctx.beginPath();
+    // wx+b=1 line
+    //ctx.moveTo(xs[0]*ss+WIDTH/2, (ys[0]-1.0/wb.w[1])*ss+HEIGHT/2);
+    //ctx.lineTo(xs[1]*ss+WIDTH/2, (ys[1]-1.0/wb.w[1])*ss+HEIGHT/2);
+    // wx+b=-1 line
+    ctx.moveTo(xs[0]*ss+WIDTH/2, (ys[0]+1.0/wb.w[1])*ss+HEIGHT/2);
+    ctx.lineTo(xs[1]*ss+WIDTH/2, (ys[1]+1.0/wb.w[1])*ss+HEIGHT/2);
+    ctx.stroke();
+    */
+  }
+}
+
+var visLoss = function() {
+  d3.select('#lossvis').html('');
+
+  // vis all data
+  var pdiv = d3.select('#lossvis').append('div');
+
+  // data columns
+  for(var j=0;j<D;j++) {
+    var div = pdiv.append('div').attr('class', 'col');
+    div.append('div').attr('class', 'nf ns').text('x['+j+']');
+    for(var i=0;i<N;i++) {
+      div.append('div').attr('class', 'nf').text(data[i][j].toFixed(2));
+    }
+  }
+
+  // label column
+  var div = pdiv.append('div').attr('class', 'col colsep');
+  div.append('div').attr('class', 'nf ns').text('y');
+  for(var i=0;i<N;i++) {
+    div.append('div').attr('class', 'nf').attr('style', 'background-color:'+data_color_light[labels[i]]).text(labels[i]);
+  }
+
+  // score (Wx + b) column
+  for(var j=0;j<3;j++) {
+    var div = pdiv.append('div').attr('class', j < 2 ? 'col' : 'col colsep');
+    div.append('div').attr('class', 'nf ns').text('s['+j+']');
+    for(var i=0;i<N;i++) {
+      var d = div.append('div').attr('class', 'nf').text(scores[i][j].toFixed(2));
+      d.attr('style', 'background-color:'+data_color_light[j]);
+    }
+  }
+
+  // loss column
+  var div = pdiv.append('div').attr('class', 'col');
+  div.append('div').attr('class', 'nf ns').text('L');
+  for(var i=0;i<N;i++) {
+    var d = div.append('div').attr('class', 'nf nb').text(loss[i].toFixed(2));
+    d.attr('style', 'border-color:' + (loss[i] > 0 ? 'red' : 'green') );
+  }
+  div.append('div').attr('class', 'nf ns').text('mean:');
+  div.append('div').attr('class', 'nf').text(cost_loss.toFixed(2));
+
+  // aggregate statistics
+  d3.select('#losstot').html('');
+  var pdiv = d3.select('#losstot').append('div');
+  pdiv.append('div').text('Total data loss: ' + cost_loss.toFixed(2));
+  pdiv.append('div').text('Regularization loss: ' + reg_loss.toFixed(2));
+  pdiv.append('div').text('Total loss: ' + total_loss.toFixed(2));
+}
+
+svmform = 'ww'; // can be ww or ova or ssvm
+scores = [];
+loss = [];
+total_loss = 0.0;
+cost_loss = 0.0;
+reg_loss = 0.0;
+regc = 0.1;
+grad_W = [];
+grad_b = [];
+var computeLoss = function() {
+
+  // compute scores, loss and gradient
+  scores = [];
+  loss = [];
+  grad_W = []; for(var q=0;q<W.length;q++) {grad_W.push(0);}
+  grad_b = []; for(var q=0;q<b.length;q++) {grad_b.push(0);}
+  cost_loss = 0.0;
+  for(var i=0;i<N;i++) {
+    var li = labels[i];
+
+    // scores compute
+    var s = [];
+    var maxj = -1;
+    var maxjscore = -999999;
+    for(var j=0;j<3;j++) { // 3 classes
+      var sj = W[j*2]*data[i][0] + W[j*2+1]*data[i][1] + b[j];
+      s.push(sj);
+      if(sj > maxjscore && j !== li) {
+        maxj = j;
+        maxjscore = sj;
+      }
+    }
+    scores.push(s);
+
+    if(svmform === 'softmax') {
+      // exp
+      var p = new Array(3);
+      var esum = 0.0;
+      for(var j=0;j<3;j++) {
+        p[j] = Math.exp(s[j]);
+        esum += p[j];
+      }
+      // normalize
+      for(var j=0;j<3;j++) {
+        p[j] /= esum;
+      }
+    }
+
+    // loss/grad compute
+    var lossi = 0;
+    for(var j=0;j<3;j++) { 
+
+      // Weston Watkins formulation
+      if(svmform === 'ww') {
+        if(li === j) continue;
+        var lossij = Math.max(0, s[j] - s[li] + 1);
+        if(lossij > 0) {
+          lossi += lossij;
+          grad_W[j*2] += data[i][0];
+          grad_W[j*2+1] += data[i][1];
+          grad_b[j] += 1;
+          grad_W[li*2] -= data[i][0];
+          grad_W[li*2+1] -= data[i][1];
+          grad_b[li] -= 1;
+        }
+      }
+
+      // OVA formulation
+      if(svmform === 'ova') {
+        var yij = li === j ? 1.0 : -1.0;
+        var lossij = Math.max(0, 1 - yij * s[j]);
+        if(lossij > 0) {
+          lossi += lossij;
+          grad_W[j*2] += -yij * data[i][0];
+          grad_W[j*2+1] += -yij * data[i][1];
+          grad_b[j] += -yij;
+        }
+      }
+
+      // Structured SVM
+      if(svmform === 'ssvm') {
+        if(j === maxj) {
+          var lossij = s[j] - s[li] + 1;
+          if(lossij > 0) {
+            lossi += lossij;
+            grad_W[j*2] += data[i][0];
+            grad_W[j*2+1] += data[i][1];
+            grad_b[j] += 1;
+            grad_W[li*2] -= data[i][0];
+            grad_W[li*2+1] -= data[i][1];
+            grad_b[li] -= 1;
+          }
+        }
+      }
+
+      if(svmform === 'softmax') {
+        if(li === j) {
+          lossi += -Math.log(p[j]);
+          grad_W[j*2] += (p[j]-1) * data[i][0];
+          grad_W[j*2+1] += (p[j]-1) * data[i][1];
+          grad_b[j] += (p[j]-1);
+        } else {
+          grad_W[j*2] += p[j] * data[i][0];
+          grad_W[j*2+1] += p[j] * data[i][1];
+          grad_b[j] += p[j];
+
+        }
+      }
+
+    }
+    
+    loss.push(lossi);
+    cost_loss += lossi;
+  }
+
+  // normalize to make mean
+  cost_loss /= N;
+  for(var i=0;i<grad_W.length;i++) { grad_W[i] /= N; }
+    for(var i=0;i<grad_b.length;i++) { grad_b[i] /= N; }
+
+  reg_loss = 0.0;
+  for(var j=0;j<W.length;j++) {
+    reg_loss += regc * W[j] * W[j];
+    grad_W[j] += 0.5 * regc * W[j];
+  }
+  total_loss = cost_loss + reg_loss;
+}
+
+var computeLossFast = function() {
+  var loss = 0.0;
+  for(var i=0;i<N;i++) {
+    // scores compute
+    var s = [];
+    for(var j=0;j<3;j++) { // 3 classes
+      s.push(W[j*2]*data[i][0] + W[j*2+1]*data[i][1] + b[j]);
+    }
+    // loss compute
+    var li = labels[i];
+    var lossi = 0;
+    for(var j=0;j<3;j++) { 
+      if(li === j) continue;
+      var lossij = Math.max(0, s[j] - s[li] + 1);
+      if(lossij > 0) {
+        lossi += lossij;
+      }
+    }
+    loss += lossi;
+  }
+  for(var j=0;j<W.length;j++) {
+    loss += regc * W[j] * W[j];
+  }
+  return loss;
+}
+
+
+var click_step = 0.1;
+var visWeights = function() {
+  d3.select('#weightvis').html('');
+
+  var pdiv = d3.select('#weightvis').append('div');
+
+  for(var i=0;i<3;i++) {
+    var div = pdiv.append('div').attr('class', 'wcol');
+    if(i<2) { div.attr('style', 'background-color: #FFC;'); }
+    else { div.attr('style', 'background-color: #CFF;'); }
+
+    for(var j=0;j<3;j++) {
+      if(i<2) {
+        div.append('div').attr('style','text-align:center').html('W['+j+','+i+']');
+      } else {
+        div.append('div').attr('style','text-align:center').html('b['+j+']');
+      }
+      var u = div.append('div').html('&#x25B2;').attr('class', 'ud');
+      var ix = j*2+i;
+      if(i <2) {
+        var dd = div.append('div').attr('class', 'wdiv');
+        dd.append('div').attr('class', 'wval').text(W[ix].toFixed(2));
+        dd.append('div').attr('class', 'wgrad').text(grad_W[ix].toFixed(2));
+        dd.attr('style', 'background-color:' + data_color_light[j]);
+      } else {
+        var dd = div.append('div').attr('class', 'wdiv');
+        dd.append('div').attr('class', 'wval').text(b[j].toFixed(2));
+        dd.append('div').attr('class', 'wgrad').text(grad_b[j].toFixed(2));
+        dd.attr('style', 'background-color:' + data_color_light[j]);
+      }
+      var d = div.append('div').html('&#x25BC;').attr('class', 'ud');
+
+      // attach click handlers
+      if(i < 2) {
+        // weights
+        d.on('click', function(q){
+          return function() {
+            W[q] -= click_step;
+            refreshW();
+          }
+        }(ix));
+        u.on('click', function(q){
+          return function() {
+            W[q] += click_step;
+            refreshW();
+          }
+        }(ix));
+      } else {
+        // biases
+        d.on('click', function(q){
+          return function() {
+            b[q] -= click_step;
+            refreshW();
+          }
+        }(j));
+        u.on('click', function(q){
+          return function() {
+            b[q] += click_step;
+            refreshW();
+          }
+        }(j));
+      }
+    }
+  }
+
+}
+
+var refreshW = function() {
+  // for now redo all
+  drawAll();
+  computeLoss();
+  visLoss();
+  visWeights();
+}
+
+var learning_rate = 0.1;
+var dostep = function() {
+
+  // perform SGD step
+  for(var i=0;i<W.length;i++) { 
+    W[i] += -learning_rate * grad_W[i];
+  }
+  for(var i=0;i<b.length;i++) { 
+    b[i] += -learning_rate * grad_b[i];
+  }
+
+  refreshW();
+  //drawLossSurfaceCurrentPosition();
+}
+
+
+var iid = -1;
+var startstep = function() {
+  if(iid !== -1) { clearInterval(iid); }
+  iid = setInterval(dostep, 100);
+}
+var stopstep = function() {
+  if(iid !== -1) { clearInterval(iid); }
+  iid = -1;
+}
+
+var randomizevars = function() {
+  for(i=0;i<W.length;i++) { W[i] = Math.random()-0.5; }
+  for(i=0;i<b.length;i++) { b[i] = Math.random()-0.5; }
+  refreshW();
+}
+
+/*
+var ss2 = 40;
+var drawLossSurface = function() {
+  // change numbers in W/b and see what the full data loss is
+  var ow1 = W[0];
+  var ow2 = W[1];
+
+  var density= 10.0;
+  var losses = [];
+  var min_loss = 999999;
+  var max_loss = -999999;
+  for(var x=0.0; x<=WIDTH; x+= density) {
+    for(var y=0.0; y<=HEIGHT; y+= density) {
+      // forward this point through
+      var dx = (x-WIDTH/2)/ss2;
+      var dy = (y-HEIGHT/2)/ss2;
+      
+      // eval loss at W + [dx, dy]
+      W[0] = ow1 + dx;
+      W[1] = ow2 + dy;
+      var loss = computeLossFast();
+      if(loss < min_loss) { min_loss = loss; }
+      if(loss > max_loss) { max_loss = loss; }
+      losses.push(loss);
+    }
+  }
+  // go again and draw
+  var n = 0;
+  for(var x=0.0; x<=WIDTH; x+= density) {
+    for(var y=0.0; y<=HEIGHT; y+= density) {
+      // make loss go from -1 to 1 which JET expects
+      var loss = 2 * (losses[n] - min_loss)/(max_loss - min_loss) - 1;
+      n++;
+      ctx2.fillStyle = JET.rgb(loss);
+      ctx2.fillRect(x-density/2-1, y-density-1, density+2, density+2);
+    }
+  }
+  
+  // reset
+  W[0] = ow1;
+  W[1] = ow2;
+}
+
+var drawLossSurfaceCurrentPosition = function() {
+  // draw current position
+  var ow1 = W[0];
+  var ow2 = W[1];
+  ctx2.strokeStyle = 'rgb(0,0,0)';
+  ctx2.lineWidth = 1;  
+  ctx2.fillStyle = 'rgb(255,255,255)';
+  var x = ow1*ss2 + WIDTH/2;
+  var y = ow2*ss2 + HEIGHT/2;
+  ctx2.beginPath();
+  ctx2.arc(x, y, 3, 0, Math.PI*2, true); 
+  ctx2.closePath();
+  ctx2.stroke();
+  ctx2.fill();
+}
+*/
+
+function handleMouseOut(e){
+  handleMouseUp(e);
+}
+function handleMouseUp(e){
+  dragging = -1;
+}
+var dragging = -1;
+function handleMouseDown(e){
+  var canvasOffset=$("#datacanvas").offset();
+  offsetX = canvasOffset.left;
+  offsetY = canvasOffset.top;
+
+  var mouseX=parseInt(e.clientX-offsetX);
+  var mouseY=parseInt(e.clientY-offsetY);
+  var mx = (mouseX-WIDTH/2)/ss;
+  var my = (mouseY-HEIGHT/2)/ss;
+
+  // find nearest data point
+  var N = data.length;
+  var mind = 999999;
+  var mini = -1;
+  for(var i=0;i<N;i++) {
+    var di = (data[i][0] - mx)*(data[i][0] - mx) + (data[i][1] - my)*(data[i][1] - my);
+    if(di < mind) {
+      mind = di;
+      mini = i;
+    }
+  }
+  dragging = mini; // store its index in dragging var
+}
+function handleMouseMove(e){
+  if(dragging >= 0) {
+    var mouseX = parseInt(e.clientX-offsetX);
+    var mouseY = parseInt(e.clientY-offsetY);
+    var mx = (mouseX-WIDTH/2)/ss;
+    var my = (mouseY-HEIGHT/2)/ss;
+    data[dragging] = [mx, my]; // reposition the dragged point
+    // redraw the canvas
+    drawAll();
+    computeLoss();
+    visLoss();
+  }
+}
+
+var svmformchange = function(r) {
+  var val = r.value;
+  svmform = val;
+  refreshW();
+}
+
+$(function() {
+  
+  // init main canvas
+  canvas = document.getElementById('datacanvas');
+  ctx = canvas.getContext('2d');
+
+  $("#datacanvas").mousedown(function(e){handleMouseDown(e);});
+  $("#datacanvas").mousemove(function(e){handleMouseMove(e);});
+  $("#datacanvas").mouseup(function(e){handleMouseUp(e);});
+  $("#datacanvas").mouseout(function(e){handleMouseOut(e);});
+
+  // and loss canvas
+  //canvas2 = document.getElementById('losscanvas');
+  //ctx2 = canvas2.getContext('2d');
+
+  // draw everything
+  drawAll();
+  computeLoss();
+  visLoss();
+  visWeights();
+
+  //drawLossSurface();
+  //drawLossSurfaceCurrentPosition();
+
+  $("#lrslider").slider({
+    min: Math.log10(0.05) - 2.0,
+    max: Math.log10(0.05) + 2.0,
+    step: 0.05,
+    value: Math.log10(learning_rate),
+    slide: function( event, ui ) {
+      learning_rate = Math.pow(10, ui.value);
+      $("#lrtext").text(learning_rate.toFixed(5));
+    }
+  });
+  $("#lrtext").text(learning_rate.toFixed(5));
+
+  $("#regcslider").slider({
+    min: Math.log10(1) - 2.0,
+    max: Math.log10(1) + 2.05,
+    step: 0.05,
+    value: Math.log10(regc),
+    slide: function( event, ui ) {
+      regc = Math.pow(10, ui.value);
+      $("#regctext").text(regc.toFixed(5));
+      refreshW();
+    }
+  });
+  $("#regctext").text(regc.toFixed(5));
+
+});
+</script>
+
+
+
+<style type="text/css">.MathJax_Hover_Frame {border-radius: .25em; -webkit-border-radius: .25em; -moz-border-radius: .25em; -khtml-border-radius: .25em; box-shadow: 0px 0px 15px #83A; -webkit-box-shadow: 0px 0px 15px #83A; -moz-box-shadow: 0px 0px 15px #83A; -khtml-box-shadow: 0px 0px 15px #83A; border: 1px solid #A6D ! important; display: inline-block; position: absolute}
+.MathJax_Menu_Button .MathJax_Hover_Arrow {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 4px; -webkit-border-radius: 4px; -moz-border-radius: 4px; -khtml-border-radius: 4px; font-family: 'Courier New',Courier; font-size: 9px; color: #F0F0F0}
+.MathJax_Menu_Button .MathJax_Hover_Arrow span {display: block; background-color: #AAA; border: 1px solid; border-radius: 3px; line-height: 0; padding: 4px}
+.MathJax_Hover_Arrow:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_Hover_Arrow:hover span {background-color: #CCC!important}
+</style><style type="text/css">#MathJax_About {position: fixed; left: 50%; width: auto; text-align: center; border: 3px outset; padding: 1em 2em; background-color: #DDDDDD; color: black; cursor: default; font-family: message-box; font-size: 120%; font-style: normal; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; border-radius: 15px; -webkit-border-radius: 15px; -moz-border-radius: 15px; -khtml-border-radius: 15px; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_About.MathJax_MousePost {outline: none}
+.MathJax_Menu {position: absolute; background-color: white; color: black; width: auto; padding: 2px; border: 1px solid #CCCCCC; margin: 0; cursor: default; font: menu; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; z-index: 201; box-shadow: 0px 10px 20px #808080; -webkit-box-shadow: 0px 10px 20px #808080; -moz-box-shadow: 0px 10px 20px #808080; -khtml-box-shadow: 0px 10px 20px #808080; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+.MathJax_MenuItem {padding: 2px 2em; background: transparent}
+.MathJax_MenuArrow {position: absolute; right: .5em; padding-top: .25em; color: #666666; font-size: .75em}
+.MathJax_MenuActive .MathJax_MenuArrow {color: white}
+.MathJax_MenuArrow.RTL {left: .5em; right: auto}
+.MathJax_MenuCheck {position: absolute; left: .7em}
+.MathJax_MenuCheck.RTL {right: .7em; left: auto}
+.MathJax_MenuRadioCheck {position: absolute; left: 1em}
+.MathJax_MenuRadioCheck.RTL {right: 1em; left: auto}
+.MathJax_MenuLabel {padding: 2px 2em 4px 1.33em; font-style: italic}
+.MathJax_MenuRule {border-top: 1px solid #CCCCCC; margin: 4px 1px 0px}
+.MathJax_MenuDisabled {color: GrayText}
+.MathJax_MenuActive {background-color: Highlight; color: HighlightText}
+.MathJax_MenuDisabled:focus, .MathJax_MenuLabel:focus {background-color: #E8E8E8}
+.MathJax_ContextMenu:focus {outline: none}
+.MathJax_ContextMenu .MathJax_MenuItem:focus {outline: none}
+#MathJax_AboutClose {top: .2em; right: .2em}
+.MathJax_Menu .MathJax_MenuClose {top: -10px; left: -10px}
+.MathJax_MenuClose {position: absolute; cursor: pointer; display: inline-block; border: 2px solid #AAA; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; font-family: 'Courier New',Courier; font-size: 24px; color: #F0F0F0}
+.MathJax_MenuClose span {display: block; background-color: #AAA; border: 1.5px solid; border-radius: 18px; -webkit-border-radius: 18px; -moz-border-radius: 18px; -khtml-border-radius: 18px; line-height: 0; padding: 8px 0 6px}
+.MathJax_MenuClose:hover {color: white!important; border: 2px solid #CCC!important}
+.MathJax_MenuClose:hover span {background-color: #CCC!important}
+.MathJax_MenuClose:hover:focus {outline: none}
+</style><style type="text/css">.MathJax_Preview .MJXf-math {color: inherit!important}
+</style><style type="text/css">.MJX_Assistive_MathML {position: absolute!important; top: 0; left: 0; clip: rect(1px, 1px, 1px, 1px); padding: 1px 0 0 0!important; border: 0!important; height: 1px!important; width: 1px!important; overflow: hidden!important; display: block!important; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none}
+.MJX_Assistive_MathML.MJX_Assistive_MathML_Block {width: 100%!important}
+</style><style type="text/css">#MathJax_Zoom {position: absolute; background-color: #F0F0F0; overflow: auto; display: block; z-index: 301; padding: .5em; border: 1px solid black; margin: 0; font-weight: normal; font-style: normal; text-align: left; text-indent: 0; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; -webkit-box-sizing: content-box; -moz-box-sizing: content-box; box-sizing: content-box; box-shadow: 5px 5px 15px #AAAAAA; -webkit-box-shadow: 5px 5px 15px #AAAAAA; -moz-box-shadow: 5px 5px 15px #AAAAAA; -khtml-box-shadow: 5px 5px 15px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true')}
+#MathJax_ZoomOverlay {position: absolute; left: 0; top: 0; z-index: 300; display: inline-block; width: 100%; height: 100%; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+#MathJax_ZoomFrame {position: relative; display: inline-block; height: 0; width: 0}
+#MathJax_ZoomEventTrap {position: absolute; left: 0; top: 0; z-index: 302; display: inline-block; border: 0; padding: 0; margin: 0; background-color: white; opacity: 0; filter: alpha(opacity=0)}
+</style><style type="text/css">.MathJax_Preview {color: #888}
+#MathJax_Message {position: fixed; left: 1px; bottom: 2px; background-color: #E6E6E6; border: 1px solid #959595; margin: 0px; padding: 2px 8px; z-index: 102; color: black; font-size: 80%; width: auto; white-space: nowrap}
+#MathJax_MSIE_Frame {position: absolute; top: 0; left: 0; width: 0px; z-index: 101; border: 0px; margin: 0px; padding: 0px}
+.MathJax_Error {color: #CC0000; font-style: italic}
+</style><style type="text/css">.MJXp-script {font-size: .8em}
+.MJXp-right {-webkit-transform-origin: right; -moz-transform-origin: right; -ms-transform-origin: right; -o-transform-origin: right; transform-origin: right}
+.MJXp-bold {font-weight: bold}
+.MJXp-italic {font-style: italic}
+.MJXp-scr {font-family: MathJax_Script,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-frak {font-family: MathJax_Fraktur,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-sf {font-family: MathJax_SansSerif,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-cal {font-family: MathJax_Caligraphic,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-mono {font-family: MathJax_Typewriter,'Times New Roman',Times,STIXGeneral,serif}
+.MJXp-largeop {font-size: 150%}
+.MJXp-largeop.MJXp-int {vertical-align: -.2em}
+.MJXp-math {display: inline-block; line-height: 1.2; text-indent: 0; font-family: 'Times New Roman',Times,STIXGeneral,serif; white-space: nowrap; border-collapse: collapse}
+.MJXp-display {display: block; text-align: center; margin: 1em 0}
+.MJXp-math span {display: inline-block}
+.MJXp-box {display: block!important; text-align: center}
+.MJXp-box:after {content: " "}
+.MJXp-rule {display: block!important; margin-top: .1em}
+.MJXp-char {display: block!important}
+.MJXp-mo {margin: 0 .15em}
+.MJXp-mfrac {margin: 0 .125em; vertical-align: .25em}
+.MJXp-denom {display: inline-table!important; width: 100%}
+.MJXp-denom > * {display: table-row!important}
+.MJXp-surd {vertical-align: top}
+.MJXp-surd > * {display: block!important}
+.MJXp-script-box > *  {display: table!important; height: 50%}
+.MJXp-script-box > * > * {display: table-cell!important; vertical-align: top}
+.MJXp-script-box > *:last-child > * {vertical-align: bottom}
+.MJXp-script-box > * > * > * {display: block!important}
+.MJXp-mphantom {visibility: hidden}
+.MJXp-munderover {display: inline-table!important}
+.MJXp-over {display: inline-block!important; text-align: center}
+.MJXp-over > * {display: block!important}
+.MJXp-munderover > * {display: table-row!important}
+.MJXp-mtable {vertical-align: .25em; margin: 0 .125em}
+.MJXp-mtable > * {display: inline-table!important; vertical-align: middle}
+.MJXp-mtr {display: table-row!important}
+.MJXp-mtd {display: table-cell!important; text-align: center; padding: .5em 0 0 .5em}
+.MJXp-mtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-mlabeledtr {display: table-row!important}
+.MJXp-mlabeledtr > .MJXp-mtd:first-child {padding-left: 0}
+.MJXp-mlabeledtr:first-child > .MJXp-mtd {padding-top: 0}
+.MJXp-merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MJXp-scale0 {-webkit-transform: scaleX(.0); -moz-transform: scaleX(.0); -ms-transform: scaleX(.0); -o-transform: scaleX(.0); transform: scaleX(.0)}
+.MJXp-scale1 {-webkit-transform: scaleX(.1); -moz-transform: scaleX(.1); -ms-transform: scaleX(.1); -o-transform: scaleX(.1); transform: scaleX(.1)}
+.MJXp-scale2 {-webkit-transform: scaleX(.2); -moz-transform: scaleX(.2); -ms-transform: scaleX(.2); -o-transform: scaleX(.2); transform: scaleX(.2)}
+.MJXp-scale3 {-webkit-transform: scaleX(.3); -moz-transform: scaleX(.3); -ms-transform: scaleX(.3); -o-transform: scaleX(.3); transform: scaleX(.3)}
+.MJXp-scale4 {-webkit-transform: scaleX(.4); -moz-transform: scaleX(.4); -ms-transform: scaleX(.4); -o-transform: scaleX(.4); transform: scaleX(.4)}
+.MJXp-scale5 {-webkit-transform: scaleX(.5); -moz-transform: scaleX(.5); -ms-transform: scaleX(.5); -o-transform: scaleX(.5); transform: scaleX(.5)}
+.MJXp-scale6 {-webkit-transform: scaleX(.6); -moz-transform: scaleX(.6); -ms-transform: scaleX(.6); -o-transform: scaleX(.6); transform: scaleX(.6)}
+.MJXp-scale7 {-webkit-transform: scaleX(.7); -moz-transform: scaleX(.7); -ms-transform: scaleX(.7); -o-transform: scaleX(.7); transform: scaleX(.7)}
+.MJXp-scale8 {-webkit-transform: scaleX(.8); -moz-transform: scaleX(.8); -ms-transform: scaleX(.8); -o-transform: scaleX(.8); transform: scaleX(.8)}
+.MJXp-scale9 {-webkit-transform: scaleX(.9); -moz-transform: scaleX(.9); -ms-transform: scaleX(.9); -o-transform: scaleX(.9); transform: scaleX(.9)}
+.MathJax_PHTML .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">.MathJax_Display {text-align: center; margin: 1em 0em; position: relative; display: block!important; text-indent: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; width: 100%}
+.MathJax .merror {background-color: #FFFF88; color: #CC0000; border: 1px solid #CC0000; padding: 1px 3px; font-style: normal; font-size: 90%}
+.MathJax .MJX-monospace {font-family: monospace}
+.MathJax .MJX-sans-serif {font-family: sans-serif}
+#MathJax_Tooltip {background-color: InfoBackground; color: InfoText; border: 1px solid black; box-shadow: 2px 2px 5px #AAAAAA; -webkit-box-shadow: 2px 2px 5px #AAAAAA; -moz-box-shadow: 2px 2px 5px #AAAAAA; -khtml-box-shadow: 2px 2px 5px #AAAAAA; filter: progid:DXImageTransform.Microsoft.dropshadow(OffX=2, OffY=2, Color='gray', Positive='true'); padding: 3px 4px; z-index: 401; position: absolute; left: 0; top: 0; width: auto; height: auto; display: none}
+.MathJax {display: inline; font-style: normal; font-weight: normal; line-height: normal; font-size: 100%; font-size-adjust: none; text-indent: 0; text-align: left; text-transform: none; letter-spacing: normal; word-spacing: normal; word-wrap: normal; white-space: nowrap; float: none; direction: ltr; max-width: none; max-height: none; min-width: 0; min-height: 0; border: 0; padding: 0; margin: 0}
+.MathJax:focus, body :focus .MathJax {display: inline-table}
+.MathJax.MathJax_FullWidth {text-align: center; display: table-cell!important; width: 10000em!important}
+.MathJax img, .MathJax nobr, .MathJax a {border: 0; padding: 0; margin: 0; max-width: none; max-height: none; min-width: 0; min-height: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+img.MathJax_strut {border: 0!important; padding: 0!important; margin: 0!important; vertical-align: 0!important}
+.MathJax span {display: inline; position: static; border: 0; padding: 0; margin: 0; vertical-align: 0; line-height: normal; text-decoration: none}
+.MathJax nobr {white-space: nowrap!important}
+.MathJax img {display: inline!important; float: none!important}
+.MathJax * {transition: none; -webkit-transition: none; -moz-transition: none; -ms-transition: none; -o-transition: none}
+.MathJax_Processing {visibility: hidden; position: fixed; width: 0; height: 0; overflow: hidden}
+.MathJax_Processed {display: none!important}
+.MathJax_ExBox {display: block!important; overflow: hidden; width: 1px; height: 60ex; min-height: 0; max-height: none}
+.MathJax .MathJax_EmBox {display: block!important; overflow: hidden; width: 1px; height: 60em; min-height: 0; max-height: none}
+.MathJax_LineBox {display: table!important}
+.MathJax_LineBox span {display: table-cell!important; width: 10000em!important; min-width: 0; max-width: none; padding: 0; border: 0; margin: 0}
+.MathJax .MathJax_HitBox {cursor: text; background: white; opacity: 0; filter: alpha(opacity=0)}
+.MathJax .MathJax_HitBox * {filter: none; opacity: 1; background: transparent}
+#MathJax_Tooltip * {filter: none; opacity: 1; background: transparent}
+@font-face {font-family: MathJax_Main; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Regular.otf?V=2.7.1') format('opentype')}
+@font-face {font-family: MathJax_Main; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Bold.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Bold.otf?V=2.7.1') format('opentype'); font-weight: bold}
+@font-face {font-family: MathJax_Main; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Main-Italic.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Main-Italic.otf?V=2.7.1') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Math; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Math-Italic.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Math-Italic.otf?V=2.7.1') format('opentype'); font-style: italic}
+@font-face {font-family: MathJax_Caligraphic; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Caligraphic-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Caligraphic-Regular.otf?V=2.7.1') format('opentype')}
+@font-face {font-family: MathJax_Size1; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size1-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size1-Regular.otf?V=2.7.1') format('opentype')}
+@font-face {font-family: MathJax_Size2; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size2-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size2-Regular.otf?V=2.7.1') format('opentype')}
+@font-face {font-family: MathJax_Size3; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size3-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size3-Regular.otf?V=2.7.1') format('opentype')}
+@font-face {font-family: MathJax_Size4; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_Size4-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_Size4-Regular.otf?V=2.7.1') format('opentype')}
+.MathJax .noError {vertical-align: ; font-size: 90%; text-align: left; color: black; padding: 1px 3px; border: 1px solid}
+</style><style type="text/css">@font-face {font-family: MathJax_AMS; src: url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/woff/MathJax_AMS-Regular.woff?V=2.7.1') format('woff'), url('https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/fonts/HTML-CSS/TeX/otf/MathJax_AMS-Regular.otf?V=2.7.1') format('opentype')}
+</style></head>
+
+<body><div style="visibility: hidden; overflow: hidden; position: absolute; top: 0px; height: 1px; width: auto; padding: 0px; border: 0px none; margin: 0px; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal;"><div id="MathJax_Hidden"></div></div><div id="MathJax_Message" style="display: none;"></div>
+<div id="wrap">
+<h1>Linear Classification Loss Visualization</h1>
+
+<div id="intro">
+These linear classifiers were written in Javascript for Stanford's <a href="http://vision.stanford.edu/teaching/cs231n/">CS231n: Convolutional Neural Networks for Visual Recognition</a>.
+
+<br><br>
+
+The class scores for linear classifiers are computed as <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-1-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;;&lt;/mo&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-1" style="width: 11.812em; display: inline-block;"><span style="display: inline-block; position: relative; width: 9.505em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.324em, 1009.5em, 2.669em, -1000em); top: -2.247em; left: 0em;"><span class="mrow" id="MathJax-Span-2"><span class="mi" id="MathJax-Span-3" style="font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.06em;"></span></span><span class="mo" id="MathJax-Span-4" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-5"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-6" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-7" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-8" style="font-family: MathJax_Main;">;</span><span class="mi" id="MathJax-Span-9" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.167em;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="mo" id="MathJax-Span-10" style="font-family: MathJax_Main;">,</span><span class="mi" id="MathJax-Span-11" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.167em;">b</span><span class="mo" id="MathJax-Span-12" style="font-family: MathJax_Main;">)</span><span class="mo" id="MathJax-Span-13" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="mi" id="MathJax-Span-14" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.278em;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="msubsup" id="MathJax-Span-15"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-16" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-17" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-18" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="mi" id="MathJax-Span-19" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.222em;">b</span></span><span style="display: inline-block; width: 0px; height: 2.247em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.381em; border-left: 0px solid; width: 0px; height: 1.383em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>f</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>W</mi><mo>,</mo><mi>b</mi><mo stretchy="false">)</mo><mo>=</mo><mi>W</mi><msub><mi>x</mi><mi>i</mi></msub><mo>+</mo><mi>b</mi></math></span></span><script type="math/tex" id="MathJax-Element-1"> f(x_i; W, b) =  W x_i + b </script>, where the parameters consist of weights <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-2-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-20" style="width: 1.328em; display: inline-block;"><span style="display: inline-block; position: relative; width: 1.037em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.333em, 1001.04em, 2.384em, -1000em); top: -2.189em; left: 0em;"><span class="mrow" id="MathJax-Span-21"><span class="mi" id="MathJax-Span-22" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span></span><span style="display: inline-block; width: 0px; height: 2.189em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.099em; border-left: 0px solid; width: 0px; height: 1.017em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi></math></span></span><script type="math/tex" id="MathJax-Element-2">W</script> and biases <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-3-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-23" style="width: 0.521em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.403em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.322em, 1000.4em, 2.373em, -1000em); top: -2.189em; left: 0em;"><span class="mrow" id="MathJax-Span-24"><span class="mi" id="MathJax-Span-25" style="font-family: MathJax_Math; font-style: italic;">b</span></span><span style="display: inline-block; width: 0px; height: 2.189em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.085em; border-left: 0px solid; width: 0px; height: 1.017em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>b</mi></math></span></span><script type="math/tex" id="MathJax-Element-3">b</script>. The training data is <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-4-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-26" style="width: 1.097em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.864em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.364em, 1000.86em, 1.31em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-27"><span class="msubsup" id="MathJax-Span-28"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-29" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-30" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.267em; border-left: 0px solid; width: 0px; height: 0.887em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-4">x_i</script> with labels <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-5-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;y&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-31" style="width: 1.04em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.806em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.364em, 1000.81em, 1.357em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-32"><span class="msubsup" id="MathJax-Span-33"><span style="display: inline-block; position: relative; width: 0.809em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.5em, 4.352em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-34" style="font-family: MathJax_Math; font-style: italic;">y<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.006em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.49em;"><span class="mi" id="MathJax-Span-35" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.326em; border-left: 0px solid; width: 0px; height: 0.945em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>y</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-5">y_i</script>. In this demo, the datapoints <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-6-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-36" style="width: 1.097em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.864em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.364em, 1000.86em, 1.31em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-37"><span class="msubsup" id="MathJax-Span-38"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-39" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-40" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.267em; border-left: 0px solid; width: 0px; height: 0.887em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-6">x_i</script>
+ are 2-dimensional and there are 3 classes, so the weight matrix is of 
+size [3 x 2] and the bias vector is of size [3 x 1].
+
+The multiclass loss function can be formulated in many ways. The default
+ in this demo is an SVM that follows [Weston and Watkins 1999]. Denoting
+ <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-7-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-41" style="width: 0.752em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.576em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.311em, 1000.58em, 2.567em, -1000em); top: -2.189em; left: 0em;"><span class="mrow" id="MathJax-Span-42"><span class="mi" id="MathJax-Span-43" style="font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.06em;"></span></span></span><span style="display: inline-block; width: 0px; height: 2.189em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.326em; border-left: 0px solid; width: 0px; height: 1.271em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>f</mi></math></span></span><script type="math/tex" id="MathJax-Element-7"> f </script> as the [3 x 1] vector that holds the class scores, the loss has the form:
+
+<span class="MathJax_Preview" style="color: inherit; display: none;"></span><div class="MathJax_Display" style="text-align: center;"><span class="MathJax" id="MathJax-Element-8-Frame" tabindex="0" style="text-align: center; position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot; display=&quot;block&quot;&gt;&lt;mi&gt;L&lt;/mi&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;munder&gt;&lt;mrow class=&quot;MJX-TeXAtom-OP MJX-fixedlimits&quot;&gt;&lt;munder&gt;&lt;mrow&gt;&lt;mfrac&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mi&gt;N&lt;/mi&gt;&lt;/mfrac&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/munder&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;j&lt;/mi&gt;&lt;mo&gt;&amp;#x2260;&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;y&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/mrow&gt;&lt;/munder&gt;&lt;mo movablelimits=&quot;true&quot; form=&quot;prefix&quot;&gt;max&lt;/mo&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mi&gt;j&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;&amp;#x2212;&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;msub&gt;&lt;mi&gt;y&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/mrow&gt;&lt;mo&gt;&amp;#x23DF;&lt;/mo&gt;&lt;/munder&gt;&lt;/mrow&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mtext&gt;data loss&lt;/mtext&gt;&lt;/mrow&gt;&lt;/munder&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;&amp;#x03BB;&lt;/mi&gt;&lt;munder&gt;&lt;mrow class=&quot;MJX-TeXAtom-OP MJX-fixedlimits&quot;&gt;&lt;munder&gt;&lt;mrow&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;/munder&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;/munder&gt;&lt;msubsup&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;/mrow&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/msubsup&gt;&lt;/mrow&gt;&lt;mo&gt;&amp;#x23DF;&lt;/mo&gt;&lt;/munder&gt;&lt;/mrow&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mtext&gt;regularization loss&lt;/mtext&gt;&lt;/mrow&gt;&lt;/munder&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-44" style="width: 27.941em; display: inline-block;"><span style="display: inline-block; position: relative; width: 22.523em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.904em, 1022.5em, 5.482em, -1000em); top: -2.419em; left: 0em;"><span class="mrow" id="MathJax-Span-45"><span class="mi" id="MathJax-Span-46" style="font-family: MathJax_Math; font-style: italic;">L</span><span class="mo" id="MathJax-Span-47" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="munderover" id="MathJax-Span-48" style="padding-left: 0.278em;"><span style="display: inline-block; position: relative; width: 13.183em; height: 0px;"><span style="position: absolute; clip: rect(2.978em, 1013.18em, 6.79em, -1000em); top: -4.493em; left: 0em;"><span class="texatom" id="MathJax-Span-49"><span class="mrow" id="MathJax-Span-50"><span class="munderover" id="MathJax-Span-51"><span style="display: inline-block; position: relative; width: 13.183em; height: 0px;"><span style="position: absolute; clip: rect(2.459em, 1013.06em, 5.546em, -1000em); top: -3.975em; left: 0.013em;"><span class="mrow" id="MathJax-Span-52"><span class="mfrac" id="MathJax-Span-53"><span style="display: inline-block; position: relative; width: 1.008em; height: 0px; margin-right: 0.12em; margin-left: 0.12em;"><span style="position: absolute; clip: rect(3.136em, 1000.43em, 4.147em, -1000em); top: -4.651em; left: 50%; margin-left: -0.25em;"><span class="mn" id="MathJax-Span-54" style="font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.119em, 1000.89em, 4.147em, -1000em); top: -3.289em; left: 50%; margin-left: -0.444em;"><span class="mi" id="MathJax-Span-55" style="font-family: MathJax_Math; font-style: italic;">N<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.085em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(0.85em, 1001.01em, 1.267em, -1000em); top: -1.314em; left: 0em;"><span style="display: inline-block; overflow: hidden; vertical-align: 0em; border-top: 1.3px solid; width: 1.008em; height: 0px;"></span><span style="display: inline-block; width: 0px; height: 1.094em;"></span></span></span></span><span class="munderover" id="MathJax-Span-56" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.444em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1001.39em, 4.597em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-57" style="font-family: MathJax_Size2; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.334em, 1000.21em, 4.255em, -1000em); top: -2.891em; left: 0.6em;"><span class="mi" id="MathJax-Span-58" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="munderover" id="MathJax-Span-59" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.444em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1001.39em, 4.597em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-60" style="font-family: MathJax_Size2; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.296em, 1001.41em, 4.423em, -1000em); top: -2.852em; left: 0.015em;"><span class="texatom" id="MathJax-Span-61"><span class="mrow" id="MathJax-Span-62"><span class="mi" id="MathJax-Span-63" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">j</span><span class="mo" id="MathJax-Span-64" style="font-size: 70.7%; font-family: MathJax_Main;">≠</span><span class="msubsup" id="MathJax-Span-65"><span style="display: inline-block; position: relative; width: 0.572em; height: 0px;"><span style="position: absolute; clip: rect(3.489em, 1000.35em, 4.292em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-66" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">y<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.004em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.805em; left: 0.346em;"><span class="mi" id="MathJax-Span-67" style="font-size: 50%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-68" style="font-family: MathJax_Main; padding-left: 0.167em;">max</span><span class="mo" id="MathJax-Span-69" style="font-family: MathJax_Main;">(</span><span class="mn" id="MathJax-Span-70" style="font-family: MathJax_Main;">0</span><span class="mo" id="MathJax-Span-71" style="font-family: MathJax_Main;">,</span><span class="msubsup" id="MathJax-Span-72" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 0.856em; height: 0px;"><span style="position: absolute; clip: rect(3.097em, 1000.55em, 4.352em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-73" style="font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.06em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.49em;"><span class="mi" id="MathJax-Span-74" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">j</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-75" style="font-family: MathJax_Main; padding-left: 0.222em;">−</span><span class="msubsup" id="MathJax-Span-76" style="padding-left: 0.222em;"><span style="display: inline-block; position: relative; width: 1.137em; height: 0px;"><span style="position: absolute; clip: rect(3.097em, 1000.55em, 4.352em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-77" style="font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.06em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.49em;"><span class="texatom" id="MathJax-Span-78"><span class="mrow" id="MathJax-Span-79"><span class="msubsup" id="MathJax-Span-80"><span style="display: inline-block; position: relative; width: 0.572em; height: 0px;"><span style="position: absolute; clip: rect(3.489em, 1000.35em, 4.292em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-81" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">y<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.004em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.805em; left: 0.346em;"><span class="mi" id="MathJax-Span-82" style="font-size: 50%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-83" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="mn" id="MathJax-Span-84" style="font-family: MathJax_Main; padding-left: 0.222em;">1</span><span class="mo" id="MathJax-Span-85" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(0.473em, 1013.18em, 1.365em, -1000em); top: 0.932em; left: 0em;"><span class="mo" id="MathJax-Span-86" style=""><span style="display: inline-block; position: relative; width: 13.183em; height: 0px;"><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 0.024em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 12.709em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 6.139em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 0.407em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 0.765em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.124em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.482em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.84em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 2.198em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 2.557em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 2.915em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.273em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.631em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.99em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 4.348em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 4.706em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 5.064em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 5.423em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 5.781em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 6.977em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 7.336em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 7.694em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 8.052em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 8.41em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 8.769em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 9.127em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 9.485em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 9.843em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 10.202em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 10.56em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 10.918em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 11.276em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 11.635em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 11.993em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 12.351em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 4.493em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1002.64em, 4.255em, -1000em); top: -1.193em; left: 5.262em;"><span class="texatom" id="MathJax-Span-87"><span class="mrow" id="MathJax-Span-88"><span class="mtext" id="MathJax-Span-89" style="font-size: 70.7%; font-family: MathJax_Main;">data loss</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-90" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="mi" id="MathJax-Span-91" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.222em;">λ</span><span class="munderover" id="MathJax-Span-92"><span style="display: inline-block; position: relative; width: 5.532em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1005.04em, 6.089em, -1000em); top: -3.975em; left: 0.245em;"><span class="texatom" id="MathJax-Span-93"><span class="mrow" id="MathJax-Span-94"><span class="munderover" id="MathJax-Span-95"><span style="display: inline-block; position: relative; width: 5.042em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1005.02em, 5.363em, -1000em); top: -3.975em; left: 0.013em;"><span class="mrow" id="MathJax-Span-96"><span class="munderover" id="MathJax-Span-97"><span style="display: inline-block; position: relative; width: 1.444em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1001.39em, 4.597em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-98" style="font-family: MathJax_Size2; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1000.36em, 4.255em, -1000em); top: -2.867em; left: 0.538em;"><span class="mi" id="MathJax-Span-99" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">k</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="munderover" id="MathJax-Span-100" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.444em; height: 0px;"><span style="position: absolute; clip: rect(2.852em, 1001.39em, 4.597em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-101" style="font-family: MathJax_Size2; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1000.19em, 4.255em, -1000em); top: -2.867em; left: 0.617em;"><span class="mi" id="MathJax-Span-102" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">l</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="msubsup" id="MathJax-Span-103" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.795em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-104" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.331em, 1000.43em, 4.147em, -1000em); top: -4.319em; left: 1.129em;"><span class="mn" id="MathJax-Span-105" style="font-size: 70.7%; font-family: MathJax_Main;">2</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1000.85em, 4.285em, -1000em); top: -3.648em; left: 0.944em;"><span class="texatom" id="MathJax-Span-106"><span class="mrow" id="MathJax-Span-107"><span class="mi" id="MathJax-Span-108" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">k</span><span class="mo" id="MathJax-Span-109" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mi" id="MathJax-Span-110" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">l</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(0.473em, 1005.04em, 1.365em, -1000em); top: 0.749em; left: 0em;"><span class="mo" id="MathJax-Span-111" style=""><span style="display: inline-block; position: relative; width: 5.042em; height: 0px;"><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 0.024em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 4.568em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; font-family: MathJax_Size4; top: -3.975em; left: 2.068em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 0.386em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 0.722em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.059em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.395em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 1.732em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 2.885em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.221em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.558em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 3.895em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="font-family: MathJax_Size4; position: absolute; top: -3.975em; left: 4.231em;"><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1005.51em, 4.393em, -1000em); top: -1.376em; left: 0em;"><span class="texatom" id="MathJax-Span-112"><span class="mrow" id="MathJax-Span-113"><span class="mtext" id="MathJax-Span-114" style="font-size: 70.7%; font-family: MathJax_Main;">regularization loss</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.419em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -3.655em; border-left: 0px solid; width: 0px; height: 5.391em;"></span></span></nobr><span class="MJX_Assistive_MathML MJX_Assistive_MathML_Block" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mi>L</mi><mo>=</mo><munder><mrow class="MJX-TeXAtom-OP MJX-fixedlimits"><munder><mrow><mfrac><mn>1</mn><mi>N</mi></mfrac><munder><mo>∑</mo><mi>i</mi></munder><munder><mo>∑</mo><mrow class="MJX-TeXAtom-ORD"><mi>j</mi><mo>≠</mo><msub><mi>y</mi><mi>i</mi></msub></mrow></munder><mo movablelimits="true" form="prefix">max</mo><mo stretchy="false">(</mo><mn>0</mn><mo>,</mo><msub><mi>f</mi><mi>j</mi></msub><mo>−</mo><msub><mi>f</mi><mrow class="MJX-TeXAtom-ORD"><msub><mi>y</mi><mi>i</mi></msub></mrow></msub><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><mo>⏟</mo></munder></mrow><mrow class="MJX-TeXAtom-ORD"><mtext>data loss</mtext></mrow></munder><mo>+</mo><mi>λ</mi><munder><mrow class="MJX-TeXAtom-OP MJX-fixedlimits"><munder><mrow><munder><mo>∑</mo><mi>k</mi></munder><munder><mo>∑</mo><mi>l</mi></munder><msubsup><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mi>k</mi><mo>,</mo><mi>l</mi></mrow><mn>2</mn></msubsup></mrow><mo>⏟</mo></munder></mrow><mrow class="MJX-TeXAtom-ORD"><mtext>regularization loss</mtext></mrow></munder></math></span></span></div><script type="math/tex; mode=display" id="MathJax-Element-8">
+L = \underbrace{ \frac{1}{N} \sum_i \sum_{j \neq y_i} \max(0, f_j - f_{y_i} + 1)}_{\text{data loss}} + \lambda \underbrace{\sum_k\sum_l W_{k,l}^2 }_{\text{regularization loss}}
+</script>
+
+Where<span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-9-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;N&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-115" style="width: 1.097em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.864em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.333em, 1000.86em, 2.362em, -1000em); top: -2.189em; left: 0em;"><span class="mrow" id="MathJax-Span-116"><span class="mi" id="MathJax-Span-117" style="font-family: MathJax_Math; font-style: italic;">N<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.085em;"></span></span></span><span style="display: inline-block; width: 0px; height: 2.189em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.071em; border-left: 0px solid; width: 0px; height: 0.99em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>N</mi></math></span></span><script type="math/tex" id="MathJax-Element-9"> N </script> is the number of examples, and <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-10-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;&amp;#x03BB;&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-118" style="width: 0.752em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.576em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.322em, 1000.55em, 2.374em, -1000em); top: -2.189em; left: 0em;"><span class="mrow" id="MathJax-Span-119"><span class="mi" id="MathJax-Span-120" style="font-family: MathJax_Math; font-style: italic;">λ</span></span><span style="display: inline-block; width: 0px; height: 2.189em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.086em; border-left: 0px solid; width: 0px; height: 1.018em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>λ</mi></math></span></span><script type="math/tex" id="MathJax-Element-10">\lambda</script> is a hyperparameter that controls the strength of the L2 regularization penalty <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-11-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;R&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;/munder&gt;&lt;munder&gt;&lt;mo&gt;&amp;#x2211;&lt;/mo&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;/munder&gt;&lt;msubsup&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mi&gt;k&lt;/mi&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mi&gt;l&lt;/mi&gt;&lt;/mrow&gt;&lt;mn&gt;2&lt;/mn&gt;&lt;/msubsup&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-121" style="width: 11.005em; display: inline-block;"><span style="display: inline-block; position: relative; width: 8.871em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.431em, 1008.87em, 3.056em, -1000em); top: -2.419em; left: 0em;"><span class="mrow" id="MathJax-Span-122"><span class="mi" id="MathJax-Span-123" style="font-family: MathJax_Math; font-style: italic;">R</span><span class="mo" id="MathJax-Span-124" style="font-family: MathJax_Main;">(</span><span class="mi" id="MathJax-Span-125" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="mo" id="MathJax-Span-126" style="font-family: MathJax_Main;">)</span><span class="mo" id="MathJax-Span-127" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="munderover" id="MathJax-Span-128" style="padding-left: 0.278em;"><span style="display: inline-block; position: relative; width: 1.499em; height: 0px;"><span style="position: absolute; clip: rect(3.052em, 1001em, 4.397em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-129" style="font-family: MathJax_Size1; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.689em; left: 1.056em;"><span class="mi" id="MathJax-Span-130" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">k</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="munderover" id="MathJax-Span-131" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.342em; height: 0px;"><span style="position: absolute; clip: rect(3.052em, 1001em, 4.397em, -1000em); top: -3.975em; left: 0em;"><span class="mo" id="MathJax-Span-132" style="font-family: MathJax_Size1; vertical-align: 0em;">∑</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.689em; left: 1.056em;"><span class="mi" id="MathJax-Span-133" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">l</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="msubsup" id="MathJax-Span-134" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.795em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-135" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.331em, 1000.43em, 4.147em, -1000em); top: -4.319em; left: 1.129em;"><span class="mn" id="MathJax-Span-136" style="font-size: 70.7%; font-family: MathJax_Main;">2</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; clip: rect(3.311em, 1000.85em, 4.285em, -1000em); top: -3.648em; left: 0.944em;"><span class="texatom" id="MathJax-Span-137"><span class="mrow" id="MathJax-Span-138"><span class="mi" id="MathJax-Span-139" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">k</span><span class="mo" id="MathJax-Span-140" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mi" id="MathJax-Span-141" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">l</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.419em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.646em; border-left: 0px solid; width: 0px; height: 1.729em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>R</mi><mo stretchy="false">(</mo><mi>W</mi><mo stretchy="false">)</mo><mo>=</mo><munder><mo>∑</mo><mi>k</mi></munder><munder><mo>∑</mo><mi>l</mi></munder><msubsup><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mi>k</mi><mo>,</mo><mi>l</mi></mrow><mn>2</mn></msubsup></math></span></span><script type="math/tex" id="MathJax-Element-11">R(W) = \sum_k\sum_l W_{k,l}^2</script>.
+ On the bottom right of this demo you can also flip to different 
+formulations for the Multiclass SVM including One vs All (OVA) where a 
+separate binary SVM is trained for every class independently (vs. other 
+classes all labeled as negatives), and Structured SVM which maximizes 
+the margin between the correct score and the score of the highest 
+runner-up class. You can also choose to use the cross-entropy loss which
+ is used by the Softmax classifier. These loses are explained the <a href="http://cs231n.github.io/linear-classify/">CS231n notes on Linear Classification</a>.
+
+</div>
+
+<div id="blockwrap" style="position:relative;">
+
+<div id="datadiv" style="width:400px; text-align:justify; position:absolute; left:10px; top:0px;">
+Datapoints are shown as circles colored by their class (red/gree/blue). 
+The background regions are colored by whichever class is most likely at 
+any point according to the current weights. Each classifier is 
+visualized by a line that indicates its zero score level set. For 
+example, the blue classifier computes scores as <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-12-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-142" style="width: 11.351em; display: inline-block;"><span style="display: inline-block; position: relative; width: 9.159em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.495em, 1009.16em, 2.822em, -1000em); top: -2.362em; left: 0em;"><span class="mrow" id="MathJax-Span-143"><span class="msubsup" id="MathJax-Span-144"><span style="display: inline-block; position: relative; width: 1.923em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-145" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.944em;"><span class="texatom" id="MathJax-Span-146"><span class="mrow" id="MathJax-Span-147"><span class="mn" id="MathJax-Span-148" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span class="mo" id="MathJax-Span-149" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mn" id="MathJax-Span-150" style="font-size: 70.7%; font-family: MathJax_Main;">0</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="msubsup" id="MathJax-Span-151"><span style="display: inline-block; position: relative; width: 1.001em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-152" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mn" id="MathJax-Span-153" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-154" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="msubsup" id="MathJax-Span-155" style="padding-left: 0.222em;"><span style="display: inline-block; position: relative; width: 1.923em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-156" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.944em;"><span class="texatom" id="MathJax-Span-157"><span class="mrow" id="MathJax-Span-158"><span class="mn" id="MathJax-Span-159" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span class="mo" id="MathJax-Span-160" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mn" id="MathJax-Span-161" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="msubsup" id="MathJax-Span-162"><span style="display: inline-block; position: relative; width: 1.001em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-163" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mn" id="MathJax-Span-164" style="font-size: 70.7%; font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-165" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="msubsup" id="MathJax-Span-166" style="padding-left: 0.222em;"><span style="display: inline-block; position: relative; width: 0.858em; height: 0px;"><span style="position: absolute; clip: rect(3.108em, 1000.42em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-167" style="font-family: MathJax_Math; font-style: italic;">b</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.429em;"><span class="mn" id="MathJax-Span-168" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 2.362em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.428em; border-left: 0px solid; width: 0px; height: 1.36em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mn>0</mn><mo>,</mo><mn>0</mn></mrow></msub><msub><mi>x</mi><mn>0</mn></msub><mo>+</mo><msub><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mn>0</mn><mo>,</mo><mn>1</mn></mrow></msub><msub><mi>x</mi><mn>1</mn></msub><mo>+</mo><msub><mi>b</mi><mn>0</mn></msub></math></span></span><script type="math/tex" id="MathJax-Element-12">W_{0,0} x_0 + W_{0,1} x_1 + b_0</script> and the blue line shows the set of points <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-13-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/msub&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/msub&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-169" style="width: 4.035em; display: inline-block;"><span style="display: inline-block; position: relative; width: 3.226em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.439em, 1003.13em, 2.785em, -1000em); top: -2.362em; left: 0em;"><span class="mrow" id="MathJax-Span-170"><span class="mo" id="MathJax-Span-171" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-172"><span style="display: inline-block; position: relative; width: 1.001em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-173" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mn" id="MathJax-Span-174" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-175" style="font-family: MathJax_Main;">,</span><span class="msubsup" id="MathJax-Span-176" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.001em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-177" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mn" id="MathJax-Span-178" style="font-size: 70.7%; font-family: MathJax_Main;">1</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-179" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 2.362em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.381em; border-left: 0px solid; width: 0px; height: 1.383em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo stretchy="false">(</mo><msub><mi>x</mi><mn>0</mn></msub><mo>,</mo><msub><mi>x</mi><mn>1</mn></msub><mo stretchy="false">)</mo></math></span></span><script type="math/tex" id="MathJax-Element-13">(x_0, x_1)</script> that give score of zero. The blue arrow draws the vector <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-14-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mrow class=&quot;MJX-TeXAtom-ORD&quot;&gt;&lt;mn&gt;0&lt;/mn&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mn&gt;1&lt;/mn&gt;&lt;/mrow&gt;&lt;/msub&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-180" style="width: 6.282em; display: inline-block;"><span style="display: inline-block; position: relative; width: 5.069em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.439em, 1004.97em, 2.822em, -1000em); top: -2.362em; left: 0em;"><span class="mrow" id="MathJax-Span-181"><span class="mo" id="MathJax-Span-182" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-183"><span style="display: inline-block; position: relative; width: 1.923em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-184" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.944em;"><span class="texatom" id="MathJax-Span-185"><span class="mrow" id="MathJax-Span-186"><span class="mn" id="MathJax-Span-187" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span class="mo" id="MathJax-Span-188" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mn" id="MathJax-Span-189" style="font-size: 70.7%; font-family: MathJax_Main;">0</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-190" style="font-family: MathJax_Main;">,</span><span class="msubsup" id="MathJax-Span-191" style="padding-left: 0.167em;"><span style="display: inline-block; position: relative; width: 1.923em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1001.05em, 4.169em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-192" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.944em;"><span class="texatom" id="MathJax-Span-193"><span class="mrow" id="MathJax-Span-194"><span class="mn" id="MathJax-Span-195" style="font-size: 70.7%; font-family: MathJax_Main;">0</span><span class="mo" id="MathJax-Span-196" style="font-size: 70.7%; font-family: MathJax_Main;">,</span><span class="mn" id="MathJax-Span-197" style="font-size: 70.7%; font-family: MathJax_Main;">1</span></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-198" style="font-family: MathJax_Main;">)</span></span><span style="display: inline-block; width: 0px; height: 2.362em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.428em; border-left: 0px solid; width: 0px; height: 1.429em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mo stretchy="false">(</mo><msub><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mn>0</mn><mo>,</mo><mn>0</mn></mrow></msub><mo>,</mo><msub><mi>W</mi><mrow class="MJX-TeXAtom-ORD"><mn>0</mn><mo>,</mo><mn>1</mn></mrow></msub><mo stretchy="false">)</mo></math></span></span><script type="math/tex" id="MathJax-Element-14">(W_{0,0}, W_{0,1})</script>, which shows the direction of score increase and its length is proportional to how steep the increase is. 
+<div style="text-align:left;"><b>Note: you can drag the datapoints</b>.</div>
+<canvas id="datacanvas" width="400" height="400"></canvas>
+</div>
+
+<div style="width:185px;position:absolute; left:420px; top:0px;text-align:justify;">
+  <div>
+  Parameters <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-15-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-199" style="width: 2.365em; display: inline-block;"><span style="display: inline-block; position: relative; width: 1.901em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.38em, 1001.89em, 2.613em, -1000em); top: -2.247em; left: 0em;"><span class="mrow" id="MathJax-Span-200"><span class="mi" id="MathJax-Span-201" style="font-family: MathJax_Math; font-style: italic;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="mo" id="MathJax-Span-202" style="font-family: MathJax_Main;">,</span><span class="mi" id="MathJax-Span-203" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.167em;">b</span></span><span style="display: inline-block; width: 0px; height: 2.247em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.312em; border-left: 0px solid; width: 0px; height: 1.244em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>W</mi><mo>,</mo><mi>b</mi></math></span></span><script type="math/tex" id="MathJax-Element-15">W,b</script> are shown below. The value is in <b>bold</b> and its gradient (computed with backprop) is in <span style="color:red;font-style:italic;">red, italic</span> below. Click the triangles to control the parameters.
+  </div>
+<div id="weightvis" class="numvis"><div><div class="wcol" style="background-color: #FFC;"><div style="text-align:center">W[0,0]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,200,250)"><div class="wval">1.00</div><div class="wgrad">-0.38</div></div><div class="ud">▼</div><div style="text-align:center">W[1,0]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,250,200)"><div class="wval">2.00</div><div class="wgrad">0.51</div></div><div class="ud">▼</div><div style="text-align:center">W[2,0]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(250,200,200)"><div class="wval">3.00</div><div class="wgrad">0.17</div></div><div class="ud">▼</div></div><div class="wcol" style="background-color: #FFC;"><div style="text-align:center">W[0,1]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,200,250)"><div class="wval">2.00</div><div class="wgrad">0.07</div></div><div class="ud">▼</div><div style="text-align:center">W[1,1]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,250,200)"><div class="wval">-4.00</div><div class="wgrad">-0.58</div></div><div class="ud">▼</div><div style="text-align:center">W[2,1]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(250,200,200)"><div class="wval">-1.00</div><div class="wgrad">0.36</div></div><div class="ud">▼</div></div><div class="wcol" style="background-color: #CFF;"><div style="text-align:center">b[0]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,200,250)"><div class="wval">0.00</div><div class="wgrad">0.11</div></div><div class="ud">▼</div><div style="text-align:center">b[1]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(200,250,200)"><div class="wval">0.50</div><div class="wgrad">-0.11</div></div><div class="ud">▼</div><div style="text-align:center">b[2]</div><div class="ud">▲</div><div class="wdiv" style="background-color:rgb(250,200,200)"><div class="wval">-0.50</div><div class="wgrad">0.00</div></div><div class="ud">▼</div></div></div></div>
+</div>
+
+<div style="width:420px;position:absolute;left:620px; top:0px;text-align:justify;">
+  Visualization of the data loss computation. Each row is loss due to one datapoint. The first three columns are the 2D data <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-16-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-204" style="width: 1.097em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.864em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.364em, 1000.86em, 1.31em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-205"><span class="msubsup" id="MathJax-Span-206"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-207" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-208" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.267em; border-left: 0px solid; width: 0px; height: 0.887em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-16">x_i</script> and the label <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-17-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;y&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-209" style="width: 1.04em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.806em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.364em, 1000.81em, 1.357em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-210"><span class="msubsup" id="MathJax-Span-211"><span style="display: inline-block; position: relative; width: 0.809em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.5em, 4.352em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-212" style="font-family: MathJax_Math; font-style: italic;">y<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.006em;"></span></span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.49em;"><span class="mi" id="MathJax-Span-213" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.326em; border-left: 0px solid; width: 0px; height: 0.945em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>y</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-17">y_i</script>. The next three columns are the three class scores from each classifier <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-18-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;mi&gt;f&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;(&lt;/mo&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;;&lt;/mo&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;mo&gt;,&lt;/mo&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;mo stretchy=&quot;false&quot;&gt;)&lt;/mo&gt;&lt;mo&gt;=&lt;/mo&gt;&lt;mi&gt;W&lt;/mi&gt;&lt;msub&gt;&lt;mi&gt;x&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;mo&gt;+&lt;/mo&gt;&lt;mi&gt;b&lt;/mi&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-214" style="width: 11.812em; display: inline-block;"><span style="display: inline-block; position: relative; width: 9.505em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(1.324em, 1009.5em, 2.669em, -1000em); top: -2.247em; left: 0em;"><span class="mrow" id="MathJax-Span-215"><span class="mi" id="MathJax-Span-216" style="font-family: MathJax_Math; font-style: italic;">f<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.06em;"></span></span><span class="mo" id="MathJax-Span-217" style="font-family: MathJax_Main;">(</span><span class="msubsup" id="MathJax-Span-218"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-219" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-220" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-221" style="font-family: MathJax_Main;">;</span><span class="mi" id="MathJax-Span-222" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.167em;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="mo" id="MathJax-Span-223" style="font-family: MathJax_Main;">,</span><span class="mi" id="MathJax-Span-224" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.167em;">b</span><span class="mo" id="MathJax-Span-225" style="font-family: MathJax_Main;">)</span><span class="mo" id="MathJax-Span-226" style="font-family: MathJax_Main; padding-left: 0.278em;">=</span><span class="mi" id="MathJax-Span-227" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.278em;">W<span style="display: inline-block; overflow: hidden; height: 1px; width: 0.104em;"></span></span><span class="msubsup" id="MathJax-Span-228"><span style="display: inline-block; position: relative; width: 0.891em; height: 0px;"><span style="position: absolute; clip: rect(3.36em, 1000.52em, 4.158em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-229" style="font-family: MathJax_Math; font-style: italic;">x</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.572em;"><span class="mi" id="MathJax-Span-230" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span><span class="mo" id="MathJax-Span-231" style="font-family: MathJax_Main; padding-left: 0.222em;">+</span><span class="mi" id="MathJax-Span-232" style="font-family: MathJax_Math; font-style: italic; padding-left: 0.222em;">b</span></span><span style="display: inline-block; width: 0px; height: 2.247em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.381em; border-left: 0px solid; width: 0px; height: 1.383em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><mi>f</mi><mo stretchy="false">(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>;</mo><mi>W</mi><mo>,</mo><mi>b</mi><mo stretchy="false">)</mo><mo>=</mo><mi>W</mi><msub><mi>x</mi><mi>i</mi></msub><mo>+</mo><mi>b</mi></math></span></span><script type="math/tex" id="MathJax-Element-18"> f(x_i; W, b) =  W x_i + b </script> (E.g. s[0] = x[0] * W[0,0] + x[1] * W[0,1] + b[0]). The last column is the data loss for a single example, <span class="MathJax_Preview" style="color: inherit; display: none;"></span><span class="MathJax" id="MathJax-Element-19-Frame" tabindex="0" style="position: relative;" data-mathml="&lt;math xmlns=&quot;http://www.w3.org/1998/Math/MathML&quot;&gt;&lt;msub&gt;&lt;mi&gt;L&lt;/mi&gt;&lt;mi&gt;i&lt;/mi&gt;&lt;/msub&gt;&lt;/math&gt;" role="presentation"><nobr aria-hidden="true"><span class="math" id="MathJax-Span-233" style="width: 1.213em; display: inline-block;"><span style="display: inline-block; position: relative; width: 0.979em; height: 0px; font-size: 124%;"><span style="position: absolute; clip: rect(0.123em, 1000.98em, 1.31em, -1000em); top: -0.979em; left: 0em;"><span class="mrow" id="MathJax-Span-234"><span class="msubsup" id="MathJax-Span-235"><span style="display: inline-block; position: relative; width: 1em; height: 0px;"><span style="position: absolute; clip: rect(3.119em, 1000.65em, 4.147em, -1000em); top: -3.975em; left: 0em;"><span class="mi" id="MathJax-Span-236" style="font-family: MathJax_Math; font-style: italic;">L</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span><span style="position: absolute; top: -3.825em; left: 0.681em;"><span class="mi" id="MathJax-Span-237" style="font-size: 70.7%; font-family: MathJax_Math; font-style: italic;">i</span><span style="display: inline-block; width: 0px; height: 3.975em;"></span></span></span></span></span><span style="display: inline-block; width: 0px; height: 0.979em;"></span></span></span><span style="display: inline-block; overflow: hidden; vertical-align: -0.267em; border-left: 0px solid; width: 0px; height: 1.185em;"></span></span></nobr><span class="MJX_Assistive_MathML" role="presentation"><math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>L</mi><mi>i</mi></msub></math></span></span><script type="math/tex" id="MathJax-Element-19">L_i</script>.
+  <div id="lossvis" class="numvis"><div><div class="col"><div class="nf ns">x[0]</div><div class="nf">0.50</div><div class="nf">0.80</div><div class="nf">0.30</div><div class="nf">-0.40</div><div class="nf">-0.30</div><div class="nf">-0.70</div><div class="nf">0.70</div><div class="nf">0.50</div><div class="nf">-0.40</div></div><div class="col"><div class="nf ns">x[1]</div><div class="nf">0.40</div><div class="nf">0.30</div><div class="nf">0.80</div><div class="nf">0.30</div><div class="nf">0.70</div><div class="nf">0.20</div><div class="nf">-0.40</div><div class="nf">-0.60</div><div class="nf">-0.50</div></div><div class="col colsep"><div class="nf ns">y</div><div class="nf" style="background-color:rgb(200,200,250)">0</div><div class="nf" style="background-color:rgb(200,200,250)">0</div><div class="nf" style="background-color:rgb(200,200,250)">0</div><div class="nf" style="background-color:rgb(200,250,200)">1</div><div class="nf" style="background-color:rgb(200,250,200)">1</div><div class="nf" style="background-color:rgb(200,250,200)">1</div><div class="nf" style="background-color:rgb(250,200,200)">2</div><div class="nf" style="background-color:rgb(250,200,200)">2</div><div class="nf" style="background-color:rgb(250,200,200)">2</div></div><div class="col"><div class="nf ns">s[0]</div><div class="nf" style="background-color:rgb(200,200,250)">1.30</div><div class="nf" style="background-color:rgb(200,200,250)">1.40</div><div class="nf" style="background-color:rgb(200,200,250)">1.90</div><div class="nf" style="background-color:rgb(200,200,250)">0.20</div><div class="nf" style="background-color:rgb(200,200,250)">1.10</div><div class="nf" style="background-color:rgb(200,200,250)">-0.30</div><div class="nf" style="background-color:rgb(200,200,250)">-0.10</div><div class="nf" style="background-color:rgb(200,200,250)">-0.70</div><div class="nf" style="background-color:rgb(200,200,250)">-1.40</div></div><div class="col"><div class="nf ns">s[1]</div><div class="nf" style="background-color:rgb(200,250,200)">-0.10</div><div class="nf" style="background-color:rgb(200,250,200)">0.90</div><div class="nf" style="background-color:rgb(200,250,200)">-2.10</div><div class="nf" style="background-color:rgb(200,250,200)">-1.50</div><div class="nf" style="background-color:rgb(200,250,200)">-2.90</div><div class="nf" style="background-color:rgb(200,250,200)">-1.70</div><div class="nf" style="background-color:rgb(200,250,200)">3.50</div><div class="nf" style="background-color:rgb(200,250,200)">3.90</div><div class="nf" style="background-color:rgb(200,250,200)">1.70</div></div><div class="col colsep"><div class="nf ns">s[2]</div><div class="nf" style="background-color:rgb(250,200,200)">0.60</div><div class="nf" style="background-color:rgb(250,200,200)">1.60</div><div class="nf" style="background-color:rgb(250,200,200)">-0.40</div><div class="nf" style="background-color:rgb(250,200,200)">-2.00</div><div class="nf" style="background-color:rgb(250,200,200)">-2.10</div><div class="nf" style="background-color:rgb(250,200,200)">-2.80</div><div class="nf" style="background-color:rgb(250,200,200)">2.00</div><div class="nf" style="background-color:rgb(250,200,200)">1.60</div><div class="nf" style="background-color:rgb(250,200,200)">-1.20</div></div><div class="col"><div class="nf ns">L</div><div class="nf nb" style="border-color:red">0.30</div><div class="nf nb" style="border-color:red">1.70</div><div class="nf nb" style="border-color:green">0.00</div><div class="nf nb" style="border-color:red">3.20</div><div class="nf nb" style="border-color:red">6.80</div><div class="nf nb" style="border-color:red">2.40</div><div class="nf nb" style="border-color:red">2.50</div><div class="nf nb" style="border-color:red">3.30</div><div class="nf nb" style="border-color:red">4.70</div><div class="nf ns">mean:</div><div class="nf">2.77</div></div></div></div>
+</div>
+
+<div id="losstot" style="width:220px;position:absolute;left:650px; top:450px;" class="numvis"><div><div>Total data loss: 2.77</div><div>Regularization loss: 3.50</div><div>Total loss: 6.27</div></div></div>
+
+<div style="width:250px; position:absolute; left:650px; top:510px;">
+<div id="regcslider" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"><span class="ui-slider-handle ui-state-default ui-corner-all" tabindex="0" style="left: 25%;"></span></div>
+<div> 
+  L2 Regularization strength: <div id="regctext" style="display:inline-block; margin-bottom:5px; margin-top: 5px;">0.10000</div>
+</div>
+</div>
+
+
+<div id="weightup" style="position:absolute;left:420px; top:490px;">
+  
+  <hr>
+
+  <div id="lrslider" class="ui-slider ui-slider-horizontal ui-widget ui-widget-content ui-corner-all"><span class="ui-slider-handle ui-state-default ui-corner-all" tabindex="0" style="left: 58.2278%;"></span></div>
+  <div> 
+    Step size: <div id="lrtext" style="display:inline-block; margin-bottom:5px; margin-top: 5px;">0.10000</div>
+  </div>
+
+  <button type="button" onclick="dostep()" style="height:40px; width:180px; margin-bottom: 10px;">Single parameter update</button><br>
+  <button type="button" onclick="startstep()" style="height:40px; width:180px; margin-bottom: 10px;">Start repeated update</button><br>
+  <button type="button" onclick="stopstep()" style="height:40px; width:180px; margin-bottom: 10px;">Stop repeated update</button><br>
+  <button type="button" onclick="randomizevars()" style="height:40px; width:180px; margin-bottom: 10px;">Randomize parameters</button><br>
+</div>
+
+<div id="svmformdiv" style="position:absolute;left:650px; top:600px;">
+  Multiclass SVM loss formulation:<br>
+  <form action="">
+  <input type="radio" name="ff" value="ww" onclick="svmformchange(this);" checked="checked">Weston Watkins 1999<br>
+  <input type="radio" name="ff" value="ova" onclick="svmformchange(this);">One vs. All<br>
+  <input type="radio" name="ff" value="ssvm" onclick="svmformchange(this);">Structured SVM<br>
+  <input type="radio" name="ff" value="softmax" onclick="svmformchange(this);">Softmax
+</form>
+</div>
+
+
+
+<!-- 
+<div id="lossdiv">
+<canvas id="losscanvas" width="400" height="400"></canvas>
+</div>  -->
+
+</div> <!-- end of blockwrap -->
+</div> <!-- end of wrap -->
+
+<div style="height:600px; width:100%;"></div>
+
+
+<div style="position: absolute; width: 0px; height: 0px; overflow: hidden; padding: 0px; border: 0px none; margin: 0px;"><div id="MathJax_Font_Test" style="position: absolute; visibility: hidden; top: 0px; left: 0px; width: auto; padding: 0px; border: 0px none; margin: 0px; white-space: nowrap; text-align: left; text-indent: 0px; text-transform: none; line-height: normal; letter-spacing: normal; word-spacing: normal; font-size: 40px; font-weight: normal; font-style: normal; font-size-adjust: none; font-family: MathJax_Size1, sans-serif;"></div></div></body></html>
