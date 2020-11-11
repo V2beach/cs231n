@@ -109,7 +109,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 因此可以将线性分类器看作模板匹配，学习到的权重矩阵W就是模板template或原型prototype，怎么理解呢？WX的线性运算可以看作W的行向量与X的列向量计算内积，可以想象，如果两个图像的像素值越相似（即从计算机的角度上看图像越相似），最后的乘积就越高，就越可能分类相同。
 
-##### Tips~
+##### Bias trick, Image data preprocessing
 + weights和bias合并
     + 按上述维度，W将b作为列向量，维度变为![](https://render.githubusercontent.com/render/math?math=\mathbb{R}^{Cx(N%2B1)})
     + 那么X就相应的将加入一行1，维度变为![](https://render.githubusercontent.com/render/math?math=\mathbb{R}^{(N%2B1)xM})，可以直观地发现，合并后就相当于多了一个维度的值恒为1的特征，意味着给这个特征打分的结果完全取决于weights里的bias。
@@ -117,8 +117,50 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 ### 损失函数
 
+如上文所说，损失函数衡量的是对学习到的W和其他超参构成的模型的不满意程度，即预测值和真实值之间的差距，主要讨论多类支持向量机损失Multiclass Support Vector Machine Loss（其实就是合页损失）和Softmax分类器的交叉熵损失Cross Entropy两种。可以发现，对于线性分类器来说，其他部分千篇一律，损失函数才是其核心。
+
+##### 再谈正则化
+[正则化(Regularization)](#向量范数度量图片差异)上文已经写过一些范数相关的内容，要理解正则化如何防止过拟合就要理解过拟合是什么，关于过拟合发生的本质原因有很多种解释，我对这个问题的理解停留在cs229的程度，吴恩达老师这部分讲得特别好，非常通俗易懂——
+
+简单来说，过拟合是一种在训练集上损失很小拟合程度很高但在测试集上准确率很低预测效果很差的现象，其原因在于模型过于复杂过于贴合训练集导致泛化能力差。
+<div align=center>
+<img src="assets/overfit_1.jpg" width="70%" height="70%">
+</div>
+
+所谓过于复杂体现在模型对应的函数中就是上图的样子，模型加入了太多的变量（特征或者特征间关联），导致模型过于复杂，目前已经探索出非常多手段避免上述情况发生，
+
+<div align=center>
+<img src="assets/overfit_2.jpg" width="60%" height="60%">
+</div>
+
+课上提到其中两种，分别是减少特征数量和正则化，但很多时候很难舍弃某些特征，当你舍弃一部分特征变量时，也舍弃了问题中的一些信息，正则化则是通过降低特征变量参数大小的方式来防止过拟合，
+
+<div align=center>
+<img src="assets/overfit_3.jpg" width="70%" height="70%">
+</div>
+
+正则化项的作用就在于此，可以限制某些特征![](https://render.githubusercontent.com/render/math?math=\theta)或者![](https://render.githubusercontent.com/render/math?math=\W)的大小，从而降低模型复杂程度，提高泛化能力。
+
+详细的损失函数、包括下面梯度计算的具体推导都在下面两个Assignment1的subtask里面。
+
+##### Loss Function = Data Loss + Regularization
+
+<div align=center>
+<img src="assets/regularization.jpg" width="70%" height="70%">
+</div>
 
 ### 最优化原理、梯度计算、梯度下降
++ 最优化
+    + 随机搜索——随机给W赋值，取其中最优
+    + 随机本地搜索——随机初始化W，随机尝试多个W的改变方向，
+    + 跟随梯度
++ 梯度计算
+    + 数值梯度法
+    + 分析梯度法
++ 梯度下降
+    + origin——虽然有其他最优化方法比如LBFGS，但梯度下降是对神经网络的损失函数最优化中最常用的方法，核心思想不变
+    + Mini-batch gradient descent
+    + Stochastic Gradient Descent(SGD)——小批量数据梯度下降的特例，但是
 
 ### Assignment1 SVM
 ##### 模型原理
@@ -134,6 +176,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 # Lecture4 Neural Networks and Backpropagation
 
 ### 反向传播及相关知识
+最关键的一个算法之一
 
 ### Assignment1 Two-Layer Neural Network
 ##### 模型原理
@@ -141,14 +184,20 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 （最后用typora生成目录，
 搞清楚重点是什么，report是简化过的之前写的总结+Lecture content+公式推导组成的核心内容，重点之前已经都写过了没什么好拖的，
-赶紧写完一遍再改，学者强迫自己完成了之后再优化。
-knn还有没解决的问题，归一化没写完，
+赶紧写完一遍再改，强迫自己完成了之后再优化。
+knn还有没解决的问题，归一化没写完，熟悉节奏了
 
 # References
 \[1\] [L1-norm和L2-norm两种范数的特点和区别？- Andy Yang](https://www.zhihu.com/question/26485586/answer/616029832)
 
 \[2\] [CS231n官方笔记授权翻译 - 杜克et al.](https://zhuanlan.zhihu.com/p/21930884)
 
-\[3\] [image classification notes](http://cs231n.github.io/classification), [linear classification notes](http://cs231n.github.io/linear-classify), [optimization notes](http://cs231n.github.io/optimization-1), [backprop notes](http://cs231n.github.io/optimization-2)
+\[3\] [image classification notes](http://cs231n.github.io/classification), [linear classification notes](http://cs231n.github.io/linear-classify), [optimization notes](http://cs231n.github.io/optimization-1), [backprop notes](http://cs231n.github.io/optimization-2) - Fei-Fei Li et al.
 
-\[4\]
+\[4\] [cs229 Machine Learning - 吴恩达](https://www.coursera.org/learn/machine-learning)
+
+\[5\] [机器学习中使用正则化来防止过拟合是什么原理？ - 叶芃](https://www.zhihu.com/question/20700829/answer/119314862)
+
+\[6\] [Bye Bye Disco - 张蔷](https://www.youtube.com/watch?v=DRQQ-oK_rdw)
+
+梯度求导的三五个笔记，WILL笔记，
