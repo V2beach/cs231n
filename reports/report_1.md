@@ -58,11 +58,16 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 交叉验证——将训练集分为多个folds，每个fold分别作为validation_set进行验证并取评估结果的平均值，如此调参。
 
 ### Assignment1 k-NN
-##### 模型原理
-+ 训练：O(1)，只是将train_set记忆，存到内存里实例化的模型对象中；
+
+在本篇report里assignment部分会分算法原理和代码分析两部分写，通常认为一种机器学习算法由学习系统和预测系统组成<sup>[11](#references)</sup>，学习系统即训练方法，故算法原理分训练和预测两部分写。
+
+##### 算法原理
++ 训练：O(1)，只是将train_set记忆，存到内存里实例化的模型对象中。
 + 预测：O(n)
     + 对每一个test_set点遍历train_set计算距离矩阵dists_matrix(num_test x num_train)；
     + 通过距离矩阵找出离test_set每个点最近的k个train_set点，投票决定该点predict_label。
+
+难点在向量化计算k-NN距离矩阵。<sup>[12](#references)</sup>
 
 ##### 代码分析
 具体到实现细节上的分析都写在代码注释或者cell里了，注释有很多废话，Inline Question全都有解答，这里不再提，另外如果是重复的代码段只会在第一次出现的地方分析。
@@ -76,7 +81,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 + 数据处理及概况
     + 调用[data_uitls](https://github.com/V2beach/cs231n/blob/main/assignment1/cs231n/data_utils.py)的load_CIFAR10分批次地加载，并切分数据集，本代码中包括train/test，validation需要自己切分跑Cross-validaion
     + 查看数据维度，随机看几组数据，将三维图像合为一维向量以便运算
-+ 调试模型
++ 调试代码
     + 实例化分类器
         + train(X, y)
         + predict(X, k)
@@ -88,7 +93,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 + 交叉验证及训练
     + array_split将原数据集切分为num_folds个array
     + 要调的超参是k，即每个label由k个最近邻决定，循环num_ks次
-        + 分别将每个fold作为验证集，其他folds用stack操作合并作为训练集，通过上文“调试模型”下的一系列操作训练/预测多次，计算准确率
+        + 分别将每个fold作为验证集，其他folds用stack操作合并作为训练集，通过上文“调试代码”下的一系列操作训练/预测多次，计算准确率
     + 超参对应准确率(k, cv accuracy)进行可视化，因为只有一个超参，二维图像很直观且美观
 + 预测及评估
 
@@ -164,7 +169,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
     + 跟随梯度——沿着上文中![](https://render.githubusercontent.com/render/math?math=\grad%20f)的反向，即让Loss Function减小最快的方向更新W
 + 梯度计算
     + 数值梯度法——这种方法其实对应公式![](https://render.githubusercontent.com/render/math?math=\frac{df(x)}{dx}=\lim_{h+\rightarrow+0}{\frac{f(x%2Bh)-f(x)}{h}+})，用一个趋近于0的h（实际1e-5就足够小）计算有限插值![](https://render.githubusercontent.com/render/math?math=f(x%2Bh)-f(x))来得到梯度，实际中用中心差值公式(centered difference formula)![](https://render.githubusercontent.com/render/math?math=\frac{f(x%2Bh)-f(x-h)}{2h})效果会更好。
-    + 分析梯度法——微分分析计算梯度即求
+    + 分析梯度法——微分分析计算梯度即求![](https://render.githubusercontent.com/render/math?math=\nabla%20_W%20L)，在[Assignment1 SVM](#assignment1-svm)和[Assignment1 Softmax](#assignment1-softmax)中均有详细推导，由于这种求法复杂且实现时容易出错，因此一般的求梯度方式是使用分析梯度法训练，在debug时使用数值梯度法进行梯度检查，梯度检查的代码在代码分析中也会提到。
     + 学习率(Learning Rate)——即沿梯度反方向更新W的下降步长，小步长下降稳定但进度慢，大步长进展快但是风险更大。采取大步长可能导致错过最优点，让损失值上升。步长（后面统称为学习率），以及后续内容中的decay学习率衰减（即更新先快后慢，理解了学习率的话，衰减的作用就很好理解），将会是我们在调参中最重要的超参数之一。
 + 梯度下降
     + origin——虽然有其他最优化方法比如LBFGS，但梯度下降是对神经网络的损失函数最优化中最常用的方法，其他方法会增加细节，但核心思想不变。
@@ -177,15 +182,29 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
     + Stochastic Gradient Descent(SGD)——随机梯度下降是小批量数据梯度下降的特例，batch_size=1，这个策略在实际情况中非常少见，也被称为在线梯度下降，但很多时候会看见人们不用MGD而用SGD来代指小批量数据梯度下降，另外值得一提的是，batch_size是一个超参，但一般由存储器的限制来决定，而非tune on validation。
 
 ### Assignment1 SVM
-##### 模型原理
+
+之后公式里的矩阵都会按代码中的维度计算，即[Lecture 3](#lecture3-loss-functions-and-optimization)提到的矩阵的转置，将所有数据的维度都了然于胸是理解并实现算法的至关重要的一步。
+
+##### 算法原理
++ 训练：
+    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x_i,W)_j)（这里和下面的wtx维度全都错了！照着自己的笔记写，比他写的清楚得多，也快得多，看他的还得另作理解，看自己的可以不加思索地整理）给m个样本根据n个特征分别打出c个类别的得分；
+    + 计算损失，SVM用的是合页损失，公式是![](https://render.githubusercontent.com/render/math?math=L=\frac{1}{N}\sum_i\sum_{j\neq%20y_i}\left[\max(0,s_j-s_{y_i}%2B\Delta)\right]%2B\lambda\sum_k\sum_l%20W_{k,l}^2)，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，每个样本的损失计算方式是![](https://render.githubusercontent.com/render/math?math=L_i=\sum_{j\neq%20y_i}\max(0,w_j^Tx_i-w_{y_i}^Tx_i%2B\Delta))，这也是计算梯度时将主要分析的式子。
+    + 计算梯度
+    + 梯度下降
++ 预测：
+    + 用学习到的权重矩阵W给数据打分；
+    + 根据最高分预测类别。
+
 ##### 代码分析
 
 ### Assignment1 Softmax
-##### 模型原理
+##### 算法原理
 ##### 代码分析
 
 ### SVM和Softmax比较及借助linear classifier demo整体理解
 [knn and linear classifier demos](http://vision.stanford.edu/teaching/cs231n-demos/)，我也在这个repo里做了[备份](https://github.com/V2beach/cs231n/tree/main/demos)，以防今后网站迁移或域名更改。
+
+整体上理解，比如svm是试图让决策边界/决策超平面距离两个类别的数据尽量远。
 
 # Lecture4 Neural Networks and Backpropagation
 
@@ -193,7 +212,8 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 最关键的一个算法之一
 
 ### Assignment1 Two-Layer Neural Network
-##### 模型原理
+用到了bp的思想但是没有模块化计算。
+##### 算法原理
 ##### 代码分析
 
 （最后用typora生成目录，
@@ -221,5 +241,9 @@ knn还有没解决的问题，归一化没写完，熟悉节奏了
 \[9\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 忆臻](https://www.zhihu.com/question/36301367/answer/142096153)
 
 \[10\] [梯度是向量，方向导数是一个数 - BoniuPoniu](https://blog.csdn.net/weixin_43702920/article/details/107435227)
+
+\[11\] [统计学习方法 - 李航](https://www.google.com/)
+
+\[12\] [CS231 作业1 - Doraemonzzz](https://doraemonzzz.com/2019/03/02/CS231%20作业1/)
 
 梯度求导的三五个笔记，WILL笔记，
