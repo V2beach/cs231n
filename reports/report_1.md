@@ -2,6 +2,8 @@
 <script type="text/javascript" src="path-to-mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
 
 # Lecture1 Course Introduction
+**全文纯手码，整理report及敲公式不易，转载请注明出处。**
+
 课程相关的[Slides, Notes, Papers](http://cs231n.stanford.edu/syllabus.html)及[花书](https://mitpress.mit.edu/books/deep-learning)作为主要参考材料。
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
@@ -122,12 +124,13 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 ##### 再谈正则化
 [正则化(Regularization)](#向量范数度量图片差异)上文已经写过一些范数相关的内容，要理解正则化如何防止过拟合就要理解过拟合是什么，关于过拟合发生的本质原因有很多种解释，我对这个问题的理解停留在cs229的程度，吴恩达老师这部分讲得特别好，非常通俗易懂——
 
-简单来说，过拟合是一种在训练集上损失很小拟合程度很高但在测试集上准确率很低预测效果很差的现象，其原因在于模型过于复杂过于贴合训练集导致泛化能力差。
+简单来说，过拟合是一种在训练集上损失很小拟合程度很高但在测试集上准确率很低预测效果很差的现象，其原因在于模型过于复杂过于贴合训练集导致泛化到其他数据集的能力差，下面几张图都来自cs229的slides和吴老师手写的notes，
+
 <div align=center>
 <img src="assets/overfit_1.jpg" width="70%" height="70%">
 </div>
 
-所谓过于复杂体现在模型对应的函数中就是上图的样子，模型加入了太多的变量（特征或者特征间关联），导致模型过于复杂，目前已经探索出非常多手段避免上述情况发生，
+所谓过于复杂体现在模型对应的函数中就是上图的样子，模型加入了太多的变量（特征或者特征间关联），导致模型过于复杂，目前已经探索出[非常多手段](https://www.zhihu.com/question/59201590/answer/167392763)避免上述情况发生，
 
 <div align=center>
 <img src="assets/overfit_2.jpg" width="60%" height="60%">
@@ -139,27 +142,25 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 <img src="assets/overfit_3.jpg" width="70%" height="70%">
 </div>
 
-正则化项的作用就在于此，可以限制某些特征![](https://render.githubusercontent.com/render/math?math=\theta)或者![](https://render.githubusercontent.com/render/math?math=\W)的大小，从而降低模型复杂程度，提高泛化能力。
+正则项也称罚项，正如图中写到的，我常将其抽象地理解为“假装帮助模型进行拟合实则通过自己的强度抑制模型的成长”，可以限制某些特征![](https://render.githubusercontent.com/render/math?math=\theta)或者![](https://render.githubusercontent.com/render/math?math=\W)的大小，直观来讲让函数变化没那么曲折，从而降低模型复杂程度，提高泛化能力。
 
-详细的损失函数、包括下面梯度计算的具体推导都在下面两个Assignment1的subtask里面。
+详细的损失函数、包括下面梯度计算的推导过程都在下面两个Assignment1的subtask里面。
 
-##### Loss Function = Data Loss + Regularization
-
-<div align=center>
-<img src="assets/regularization.jpg" width="70%" height="70%">
-</div>
-
-### 最优化原理、梯度计算、梯度下降
+### 梯度的理解、最优化原理、梯度计算、梯度下降
++ 梯度
+    + 高维微分——我理解的微分是微小的Δy，而导数是Δy/Δx的极限，可微一定可导，因此，下文可能会不加推导的从可微过渡到可导。以![](https://render.githubusercontent.com/render/math?math=z=f(x,y))为例，过去求微分指的仅是对x或y的偏导![](https://render.githubusercontent.com/render/math?math=f_x^'(x,y))或![](https://render.githubusercontent.com/render/math?math=f_y^'(x,y))，或是全导![](https://render.githubusercontent.com/render/math?math=dz|_{x_0,y_0}=f^'(x_0,y_0)=f^'_x(x_0,y_0)\Delta\x%2B+f^'_y(x_0,y_0)\Delta\y)，只限于沿坐标轴方向求微分求导，但实际上在函数的一个可微处沿坐标系内任何一个方向都可以求其导数，引入方向向量和方向导数的概念以便后续讨论。
+    + 方向导数——同样以三维空间及二维自变量为例，![](https://render.githubusercontent.com/render/math?math=y=f(x_0,x_1))，![](https://render.githubusercontent.com/render/math?math=x_0,x_1)轴基向量分别为![](https://render.githubusercontent.com/render/math?math=\vec{i},\vec{j})，设方向向量![](https://render.githubusercontent.com/render/math?math=\vec{v})为任意方向的单位向量，这时有![](https://render.githubusercontent.com/render/math?math=f_v:t\rightarrow%20f(\vec{x}%2Bt\vec{v}))，x为一个二维向量，为什么f是关于t的映射呢，这里的v范数为1，只用来控制方向，而t才是真正控制大小的自变量，如果![](https://render.githubusercontent.com/render/math?math=\vec{v})恰好等于![](https://render.githubusercontent.com/render/math?math=\vec{i})，那么t其实就是![](https://render.githubusercontent.com/render/math?math=\Delta%20x_0)，而f也变成对于![](https://render.githubusercontent.com/render/math?math=x_0)的偏函数![](https://render.githubusercontent.com/render/math?math=f_v=(x_0%2B\Delta%20x_0,x_1))了。设方向向量与![](https://render.githubusercontent.com/render/math?math=x_0)轴正向夹角为θ，则向量![](https://render.githubusercontent.com/render/math?math=\vec{v})可被分解为![](https://render.githubusercontent.com/render/math?math=cos\theta\vec{i}%2Bsin\theta\vec{j})，这时上述映射也变成了![](https://render.githubusercontent.com/render/math?math=f_v:t\rightarrow%20f(x_0%2Bsin\theta%20t,x_1%2Bcos\theta%20t))，那么沿着![](https://render.githubusercontent.com/render/math?math=\vec{v})方向的方向导数就得到了![](https://render.githubusercontent.com/render/math?math=\lim_{t+\rightarrow+0}{\frac{f(x_{0}%2Btcos\theta+%2Cy_{0}%2Btsin\theta+)-f(x_{0}%2Cy_{0})}{t}+})，将这个极限用Nabla劈算子定义一下向量微分，![](https://render.githubusercontent.com/render/math?math=\nabla_%7Bv%7Df%28x%2Cy%29%3Df^'_%7Bx%7D%28x%2Cy%29cos%5Ctheta+++%2Bf^'_%7By%7D%28x%2Cy%29sin%5Ctheta+)。
+    + 梯度——定义齐全了，进行最后一步推导![](https://render.githubusercontent.com/render/math?math=A%3D(f_{x}(x%2Cy)+%2Cf_{y}(x%2Cy))) I%3D(cos\theta+%2Csin\theta+)
 + 最优化
     + 随机搜索——随机给W赋值，取其中最优
-    + 随机本地搜索——随机初始化W，随机尝试多个W的改变方向，
-    + 跟随梯度
+    + 随机本地搜索——随机初始化W，随机尝试多个W的改变方向，选择效果最好的更新W
+    + 跟随梯度——
 + 梯度计算
-    + 数值梯度法
-    + 分析梯度法
+    + 数值梯度法——
+    + 分析梯度法——
 + 梯度下降
     + origin——虽然有其他最优化方法比如LBFGS，但梯度下降是对神经网络的损失函数最优化中最常用的方法，核心思想不变
-    + Mini-batch gradient descent
+    + Mini-batch gradient descent——
     + Stochastic Gradient Descent(SGD)——小批量数据梯度下降的特例，但是
 
 ### Assignment1 SVM
@@ -196,8 +197,14 @@ knn还有没解决的问题，归一化没写完，熟悉节奏了
 
 \[4\] [cs229 Machine Learning - 吴恩达](https://www.coursera.org/learn/machine-learning)
 
-\[5\] [机器学习中使用正则化来防止过拟合是什么原理？ - 叶芃](https://www.zhihu.com/question/20700829/answer/119314862)
+\[5\] [机器学习中使用正则化来防止过拟合是什么原理？- 叶芃](https://www.zhihu.com/question/20700829/answer/119314862)
 
 \[6\] [Bye Bye Disco - 张蔷](https://www.youtube.com/watch?v=DRQQ-oK_rdw)
+
+\[7\] [全微分 - 维基百科](https://zh.wikipedia.org/wiki/全微分)
+
+\[8\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 马同学](https://www.zhihu.com/question/36301367/answer/156102040)
+
+\[9\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 忆臻](https://www.zhihu.com/question/36301367/answer/142096153)
 
 梯度求导的三五个笔记，WILL笔记，
