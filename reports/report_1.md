@@ -2,13 +2,12 @@
 <script type="text/javascript" src="path-to-mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
 
 # Lecture1 Course Introduction
-**全文纯手码，整理report及敲公式不易，转载请注明出处。**
 
 课程相关的[Slides, Notes, Papers](http://cs231n.stanford.edu/syllabus.html)及[花书](https://mitpress.mit.edu/books/deep-learning)作为主要参考材料。
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
 
-会将我学习到的，课上讲到的核心内容、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花、边学边忘。
+会将我学习到的，课上讲到的核心内容、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花、边学边忘，全文手码自己的思考和理解，参考资料都整理在文末，转载请注明出处。
 
 cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即用于视觉识别的卷积神经网络，Lecture 1\~4通过CV和ML基本概念及算法原理讲解了Visual Recognition问题的处理流程和学习DL必要的前置ML知识，我也趁这段时间，借助花书和统计学习方法恶补了必要的数学知识；Lecture 5\~end才从CNN讲起，进入课程主题。
 
@@ -150,7 +149,8 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 + 梯度
     + 高维微分——我理解的微分是微小的Δy，而导数是Δy/Δx的极限，可微一定可导，因此，下文可能会不加推导的从可微过渡到可导。以![](https://render.githubusercontent.com/render/math?math=z=f(x,y))为例，过去求微分指的仅是对x或y的偏导![](https://render.githubusercontent.com/render/math?math=f_x^'(x,y))或![](https://render.githubusercontent.com/render/math?math=f_y^'(x,y))，或是全导![](https://render.githubusercontent.com/render/math?math=dz|_{x_0,y_0}=f^'(x_0,y_0)=f^'_x(x_0,y_0)\Delta\x%2B+f^'_y(x_0,y_0)\Delta\y)，只限于沿坐标轴方向求微分求导，但实际上在函数的一个可微处沿坐标系内任何一个方向都可以求其导数，引入方向向量和方向导数的概念以便后续讨论。
     + 方向导数——同样以三维空间及二维自变量为例，![](https://render.githubusercontent.com/render/math?math=y=f(x_0,x_1))，![](https://render.githubusercontent.com/render/math?math=x_0,x_1)轴基向量分别为![](https://render.githubusercontent.com/render/math?math=\vec{i},\vec{j})，设方向向量![](https://render.githubusercontent.com/render/math?math=\vec{v})为任意方向的单位向量，这时有![](https://render.githubusercontent.com/render/math?math=f_v:t\rightarrow%20f(\vec{x}%2Bt\vec{v}))，x为一个二维向量，为什么f是关于t的映射呢，这里的v范数为1，只用来控制方向，而t才是真正控制大小的自变量，如果![](https://render.githubusercontent.com/render/math?math=\vec{v})恰好等于![](https://render.githubusercontent.com/render/math?math=\vec{i})，那么t其实就是![](https://render.githubusercontent.com/render/math?math=\Delta%20x_0)，而f也变成对于![](https://render.githubusercontent.com/render/math?math=x_0)的偏函数![](https://render.githubusercontent.com/render/math?math=f_v=(x_0%2B\Delta%20x_0,x_1))了。设方向向量与![](https://render.githubusercontent.com/render/math?math=x_0)轴正向夹角为θ，则向量![](https://render.githubusercontent.com/render/math?math=\vec{v})可被分解为![](https://render.githubusercontent.com/render/math?math=cos\theta\vec{i}%2Bsin\theta\vec{j})，这时上述映射也变成了![](https://render.githubusercontent.com/render/math?math=f_v:t\rightarrow%20f(x_0%2Bsin\theta%20t,x_1%2Bcos\theta%20t))，那么沿着![](https://render.githubusercontent.com/render/math?math=\vec{v})方向的方向导数就得到了![](https://render.githubusercontent.com/render/math?math=\lim_{t+\rightarrow+0}{\frac{f(x_{0}%2Btcos\theta+%2Cy_{0}%2Btsin\theta+)-f(x_{0}%2Cy_{0})}{t}+})，将这个极限用Nabla劈算子定义一下向量微分，![](https://render.githubusercontent.com/render/math?math=\nabla_%7Bv%7Df%28x%2Cy%29%3Df^'_%7Bx%7D%28x%2Cy%29cos%5Ctheta+++%2Bf^'_%7By%7D%28x%2Cy%29sin%5Ctheta+)。
-    + 梯度——定义齐全了，进行最后一步推导![](https://render.githubusercontent.com/render/math?math=A%3D(f_{x}(x%2Cy)+%2Cf_{y}(x%2Cy))) I%3D(cos\theta+%2Csin\theta+)
+    + 梯度——定义齐全了，进行最后一步推导，根据上文方向向量和方向导数![](https://render.githubusercontent.com/render/math?math=D%3D(f^'_{x}(x%2Cy)+%2Cf^'_{y}(x%2Cy)))
+    ![](https://render.githubusercontent.com/render/math?math=V%3D(cos\theta+%2Csin\theta+))
 + 最优化
     + 随机搜索——随机给W赋值，取其中最优
     + 随机本地搜索——随机初始化W，随机尝试多个W的改变方向，选择效果最好的更新W
