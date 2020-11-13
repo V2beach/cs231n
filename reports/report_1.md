@@ -83,13 +83,14 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
     + 查看数据维度，随机看几组数据，将三维图像合为一维向量以便运算
 + 调试代码
     + 实例化分类器
-        + train(X, y)
-        + predict(X, k)
-        + predict_labels(dists, k)
+        + train(X, y) void
+        + compute_distances(X) return dists
+        + predict_labels(dists, k) return y_predict
+        + predict(X, k, num_loops) return y_predict
     + train——self.data = data
-    + dists距离矩阵计算——从self里调出数据，分别使用双重循环，单循环和无循环的向量化操作计算train_set和test_set每两张图片像素的L1距离，**向量化（矩阵运算）可以带来跨数量级的效率提升**，其实可以直接用np.linalg.norm()求范数
+    + compute_distances计算距离矩阵——从self里调出数据，分别使用双重循环，单循环和无循环的向量化操作计算train_set和test_set每两张图片像素的L1距离，**向量化（矩阵运算）可以带来跨数量级的效率提升**，其实可以直接用np.linalg.norm()求范数
     + predict_labels计算预测结果——argsort获得跟测试集距离排序后的训练集索引；留下前k个点的labels；bincount进行统计；argmax得到出现次数最多的label
-    + predict——计算dists并predict_labels
+    + predict——根据num_loops选择方式计算dists并传入predict_labels，只是为了比较不同方式计算loss和gradient的速度并直观感受向量化带来的质的变化
 + 交叉验证及训练
     + array_split将原数据集切分为num_folds个array
     + 要调的超参是k，即每个label由k个最近邻决定，循环num_ks次
@@ -183,31 +184,72 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 ### Assignment1 SVM
 
-之后公式里的矩阵都会按代码中的维度计算，即[Lecture 3](#lecture3-loss-functions-and-optimization)提到的矩阵的转置，将所有数据的维度都了然于胸是理解并实现算法的至关重要的一步。
+**之后公式里的矩阵都会按代码中的维度计算，即[Lecture 3](#lecture3-loss-functions-and-optimization)提到的矩阵的转置，将所有数据的维度都了然于胸是理解并实现算法的至关重要的一步。**
 
-设![](https://render.githubusercontent.com/render/math?math=X=\left[\begin{matrix}-(x^{(1)})^T-\\-(x^{(2)})^T-\\\vdots\\-(x^{(m)})^T-\end{matrix}\right]\in\mathbb%20R^{m\times%20d})，![](https://render.githubusercontent.com/render/math?math=\vec%20y=\left[\begin{matrix}y^{(1)}\\y^{(2)}\\\vdots\\y^{(m)}\end{matrix}\right]\in\mathbb%20R^{m},W\in\mathbb%20R^{d\times%20c})
+设![](https://render.githubusercontent.com/render/math?math=X=\left[\begin{matrix}-x^{(1)}-\\\\-x^{(2)}-\\\\\vdots\\\\-x^{(m)}-\end{matrix}\right]\in\mathbb%20R^{m\times%20n})，![](https://render.githubusercontent.com/render/math?math=\vec%20y=\left[\begin{matrix}y^{(1)}\\\\y^{(2)}\\\\\vdots\\\\y^{(m)}\end{matrix}\right]\in\mathbb%20R^{m})，![](https://render.githubusercontent.com/render/math?math=W=\left[\begin{matrix}\mid\\\\w_{1},w_{2},\dots,w_{c}\\\\\mid\end{matrix}\right]\in\mathbb%20R^{n\times%20c})，则有![](https://render.githubusercontent.com/render/math?math=S=XW\in\mathbb%20R^{m\times%20c})其中![](https://render.githubusercontent.com/render/math?math=s^{(i)}_{j}=(x^{(i)}W)_j\in%20R)指第i个样本在第j个类别的得分。
 
 ##### 算法原理
 
 + 训练：
-    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x_i,W)_j)（这里和下面的wtx维度全都错了！照着自己的笔记写，比他写的清楚得多，也快得多，看他的还得另作理解，看自己的可以不加思索地整理）给m个样本根据n个特征分别打出c个类别的得分；
-    + 计算损失，SVM用的是合页损失，公式是![](https://render.githubusercontent.com/render/math?math=L=\frac{1}{N}\sum_i\sum_{j\neq%20y_i}\left[\max(0,s_j-s_{y_i}%2B\Delta)\right]%2B\lambda\sum_k\sum_l%20W_{k,l}^2)，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，每个样本的损失计算方式是![](https://render.githubusercontent.com/render/math?math=L_i=\sum_{j\neq%20y_i}\max(0,w_j^Tx_i-w_{y_i}^Tx_i%2B\Delta))，这也是计算梯度时将主要分析的式子。
-    + 计算梯度
-    + 梯度下降
+    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x^{(i)},W)_j)给m个样本根据n个特征分别打出c个类别的得分。
+    + 计算损失，SVM用的是合页损失，公式是![](https://render.githubusercontent.com/render/math?math=L=\frac{1}{N}\sum_i\sum_{j\neq%20y^{(i)}}\left[\max(0,s_j-s_{y^{(i)}}%2B\Delta)\right]%2B\lambda\sum_k\sum_l%20W_{k,l}^2)，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，所以每个样本预测的损失就是-(正确分类yi得分-(错误分类j得分+边界))的和![](https://render.githubusercontent.com/render/math?math=L_i=\sum_{j\neq%20y^{(i)}}\max(0,x^{(i)}w_j-x^{(i)}w_{y^{(i)}}%2B\Delta))，这也是计算梯度时将主要分析的式子。
+    + 计算梯度，只要不犯像我一样的错误，看到矩阵求导就想系统地学矩阵求导术，按照**碰到矩阵求梯度就逐元素（或者逐向量）求导**的思路，这里的梯度还是比较好求的，将式子展开比如只有三个类别1,2,3且正确分类是类别2，得到![](https://render.githubusercontent.com/render/math?math=L_i=\max(0,x^{(i)}w_1-x^{(i)}w_{2}%2B\Delta)%2B\max(0,x^{(i)}w_3-x^{(i)}w_{2}%2B\Delta))，可以得到当![](https://render.githubusercontent.com/render/math?math=s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)时，对W求梯度及对W内的向量w1,w2,w3求导，结果会是![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{y^{(1)}}}L_i=x^{(i)},\Delta_{w_{y^{(2)}}}L_i=-2x^{(i)},\Delta_{w_{y^{(3)}}}L_i=x^{(i)})，结合上述易得式![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{y^{(i)}}}L_i=-\left(\sum_{j\neq%20y^{(i)}}\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)\right)x^{(i)})，![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{j}}L_i=\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)x^{(i)})，这个梯度公式结合上面我举的例子就很好理解，且由于复合函数较为简单，就没有费力用链式法则而是直接展开，其中花体1是示性函数中的指示函数，括号内容为真则为1，否则为0。
+    + 梯度下降，Loop——W减![](https://render.githubusercontent.com/render/math?math=\nabla_WL)\* learning_rate后重复上述步骤。
 + 预测：
     + 用学习到的权重矩阵W给数据打分；
     + 根据最高分预测类别。
 
 ##### 代码分析
++ [预操作](#assignment1-k-nn)
++ [数据处理及概况](#assignment1-k-nn)，不同的是数据集被切分为train/validation/test/dev，且让数据减了平均值（具体特征缩放包括归一化和标准化相关的内容详见[维基百科](https://en.wikipedia.org/wiki/Feature_scaling)），且使用stack将weights和bias合并。
++ 调试代码
+    + 实例化分类器
+        + class LinearClassifier
+            + train(X, y, learning_rate, reg, num_iters, batch_size, verbose), return loss_history
+            + predict(X) return y_predict
+            + loss(X_batch, y_batch, reg) return loss, gradient
+        + subclass LinearSVM(LinearClassifier)继承自线性分类器，重载实现loss(X_batch, y_batch, reg)
+            + svm_loss_vectorized(self.W, X_batch, y_batch, reg)
+        + class Softmax(LinearClassifier)同样是子类，之后再说
+    + train——整个函数就是实现了一个梯度下降，随机初始化权重矩阵self.W，这是个始终存在于LinearClassifier类内的变量，并开始num_iters次循环调用loss函数计算gradient更新W，loss值本身是没用的，记录到history里以可视化训练过程
+    + predict——y_predict = argmax(X.dot(self.W), axis=1)，对axis的理解很重要，我的理解都在注释里
+    + svm_loss_vectorized——直接循环来算很好写，这里主要写向量化的步骤，
+    + 还有svm, softmax, 整体理解，反向传播，2nn五个要写的内容，前两者和最后一个都是差不多的东西，写完一个剩下的也就差不多了，整体理解也比较好写，难想但是好写，剩下的最关键的就是反向传播了
++ 在验证集上调超参及训练
++ 预测及评估
 
 ### Assignment1 Softmax
+
+[说在前面](#assignment1-svm)，设![](https://render.githubusercontent.com/render/math?math=X=\left[\begin{matrix}-x^{(1)}-\\\\-x^{(2)}-\\\\\vdots\\\\-x^{(m)}-\end{matrix}\right]\in\mathbb%20R^{m\times%20n})，![](https://render.githubusercontent.com/render/math?math=\vec%20y=\left[\begin{matrix}y^{(1)}\\\\y^{(2)}\\\\\vdots\\\\y^{(m)}\end{matrix}\right]\in\mathbb%20R^{m})，![](https://render.githubusercontent.com/render/math?math=W=\left[\begin{matrix}\mid\\\\w_{1},w_{2},\dots,w_{c}\\\\\mid\end{matrix}\right]\in\mathbb%20R^{n\times%20c})，则有![](https://render.githubusercontent.com/render/math?math=S=XW\in\mathbb%20R^{m\times%20c})其中![](https://render.githubusercontent.com/render/math?math=s^{(i)}_{j}=(x^{(i)}W)_j\in%20R)指第i个样本在第j个类别的得分。
+
 ##### 算法原理
+
++ 训练
+    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x_i,W)_j)给m个样本根据n个特征分别打出c个类别的得分；
+    + 计算损失，Softmax用的是交叉熵损失，将用到的公式有![](https://render.githubusercontent.com/render/math?math=L_i=-\log\left(\frac{e^{f_{y_i}}}{\sum_j%20e^{f_j}}\right)\hspace{0.5in}\text{or%20equivalently}\hspace{0.5in}L_i=-f_{y_i}+\log\sum_j%20e^{f_j})，
+
+    + 计算梯度，
+    + 梯度下降，Loop——W减![](https://render.githubusercontent.com/render/math?math=\nabla_WL)\* learning_rate后重复上述步骤。
++ 预测
+
 ##### 代码分析
+
++ [预操作](#assignment1-svm)
++ [数据处理及概况](#assignment1-svm)
++ 调试代码
+    + 实例化分类器
+        + class LinearClassifier
+            + train(X, y, learning_rate, reg, num_iters, batch_size, verbose), return loss_history
+            + predict(X) return y_predict
+            + loss(X_batch, y_batch, reg) return loss, gradient
+        + class LinearSVM(LinearClassifier)
+        + subclass Softmax(LinearClassifier)
+            + softmax_loss_vectorized(self.W, X_batch, y_batch, reg)
 
 ### SVM和Softmax比较及借助linear classifier demo整体理解
 [knn and linear classifier demos](http://vision.stanford.edu/teaching/cs231n-demos/)，我也在这个repo里做了[备份](https://github.com/V2beach/cs231n/tree/main/demos)，以防今后网站迁移或域名更改。
 
-整体上理解，比如svm是试图让决策边界/决策超平面距离两个类别的数据尽量远。
+整体上理解，比如svm是试图让决策边界/决策超平面距离两个类别的数据尽量远；交叉熵和其他损失的区别之类的。
 
 # Lecture4 Neural Networks and Backpropagation
 
@@ -249,4 +291,8 @@ knn还有没解决的问题，归一化没写完，熟悉节奏了
 
 \[12\] [CS231 作业1 - Doraemonzzz](https://doraemonzzz.com/2019/03/02/CS231%20作业1/)
 
-梯度求导的三五个笔记，WILL笔记，
+\[13\]
+
+
+
+svm softmax梯度求导的三五个笔记，WILL笔记，
