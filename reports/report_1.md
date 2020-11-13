@@ -169,7 +169,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
     + 随机本地搜索——随机初始化W，随机尝试多个W的改变方向，选择效果最好的更新W
     + 跟随梯度——沿着上文中![](https://render.githubusercontent.com/render/math?math=\grad%20f)的反向，即让Loss Function减小最快的方向更新W
 + 梯度计算
-    + 数值梯度法——这种方法其实对应公式![](https://render.githubusercontent.com/render/math?math=\frac{df(x)}{dx}=\lim_{h+\rightarrow+0}{\frac{f(x%2Bh)-f(x)}{h}+})，用一个趋近于0的h（实际1e-5就足够小）计算有限插值![](https://render.githubusercontent.com/render/math?math=f(x%2Bh)-f(x))来得到梯度，实际中用中心差值公式(centered difference formula)![](https://render.githubusercontent.com/render/math?math=\frac{f(x%2Bh)-f(x-h)}{2h})效果会更好。
+    + 数值梯度法——这种方法其实对应公式![](https://render.githubusercontent.com/render/math?math=\frac{df(x)}{dx}=\lim_{h+\rightarrow+0}{\frac{f(x%2Bh)-f(x)}{h}+})，用一个趋近于0的h（实际1e-5就足够小）计算有限差值![](https://render.githubusercontent.com/render/math?math=f(x%2Bh)-f(x))来得到梯度，实际中用中心差商公式(centered difference formula)![](https://render.githubusercontent.com/render/math?math=\frac{f(x%2Bh)-f(x-h)}{2h})效果会更好。
     + 分析梯度法——微分分析计算梯度即求![](https://render.githubusercontent.com/render/math?math=\nabla%20_W%20L)，在[Assignment1 SVM](#assignment1-svm)和[Assignment1 Softmax](#assignment1-softmax)中均有详细推导，由于这种求法复杂且实现时容易出错，因此一般的求梯度方式是使用分析梯度法训练，在debug时使用数值梯度法进行梯度检查，梯度检查的代码在代码分析中也会提到。
     + 学习率(Learning Rate)——即沿梯度反方向更新W的下降步长，小步长下降稳定但进度慢，大步长进展快但是风险更大。采取大步长可能导致错过最优点，让损失值上升。步长（后面统称为学习率），以及后续内容中的decay学习率衰减（即更新先快后慢，理解了学习率的话，衰减的作用就很好理解），将会是我们在调参中最重要的超参数之一。
 + 梯度下降
@@ -214,9 +214,15 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
     + train——整个函数就是实现了一个梯度下降，随机初始化权重矩阵self.W，这是个始终存在于LinearClassifier类内的变量，并开始num_iters次循环调用loss函数计算gradient更新W，loss值本身是没用的，记录到history里以可视化训练过程
     + predict——y_predict = argmax(X.dot(self.W), axis=1)，对axis的理解很重要，我的理解都在注释里
     + svm_loss_vectorized——直接循环来算很好写，这里主要写向量化的步骤，
+        + 算得分，scores = X.dot(W)
+        + 求损失，根据scores计算错误分类得分+Δ和正确分类得分之间的margins，维度m * c，进而根据上文公式算得loss
+        + 推梯度，从上文推导的公式可以看出，支持向量机的合页损失梯度向量的各维度在求导之后只剩![](https://render.githubusercontent.com/render/math?math=\coeff%20*%20x^{(i)})，区别只是coeff系数的不同，所以向量化求梯度只需要根据margins > 0求一个包含所有coeff的系数矩阵coefficient_matrix，维度是m * c，梯度gradient就等于(X.T).dot(coefficient_matrix)
+    + gradient_check——[梯度检查](https://github.com/V2beach/cs231n/blob/main/assignment1/cs231n/gradient_check.py)像[上文](#梯度的理解最优化原理梯度计算梯度下降)说的一样，用到了中心差商公式，结果跟微分求得的梯度比较达到梯度检查的目的，是实际实现时非常有效的技巧
     + 还有svm, softmax, 整体理解，反向传播，2nn五个要写的内容，前两者和最后一个都是差不多的东西，写完一个剩下的也就差不多了，整体理解也比较好写，难想但是好写，剩下的最关键的就是反向传播了
 + 在验证集上调超参及训练
+    + 调参和训练的过程其实是合在一起进行的，这里只需要调learning_rate和regularization_strength两个超参，一边用不同的超参训练模型一边评估在验证集上的预测结果，当尝试完所有的组合，也就得到了用最优组合训练的模型，即LinearClassifier的实例化对象。
 + 预测及评估
++ 权重矩阵可视化，可以发现权重矩阵对应的图像其实拥有对应分类物体的轮廓，这也印证了之前线性分类器是模板匹配的判断
 
 ### Assignment1 Softmax
 
@@ -225,8 +231,8 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 ##### 算法原理
 
 + 训练
-    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x_i,W)_j)给m个样本根据n个特征分别打出c个类别的得分；
-    + 计算损失，Softmax用的是交叉熵损失，将用到的公式有![](https://render.githubusercontent.com/render/math?math=L_i=-\log\left(\frac{e^{f_{y_i}}}{\sum_j%20e^{f_j}}\right)\hspace{0.5in}\text{or%20equivalently}\hspace{0.5in}L_i=-f_{y_i}+\log\sum_j%20e^{f_j})，
+    + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x^{(i)},W)_j)给m个样本根据n个特征分别打出c个类别的得分。
+    + 计算损失，Softmax用的是交叉熵损失，将用到的公式有三个，三者拆分自同一个复合函数![](https://render.githubusercontent.com/render/math?math=L_i=-\log\left(\frac{e^{f_{y_i}}}{\sum_j%20e^{f_j}}\right)\hspace{0.5in}\text{or%20equivalently}\hspace{0.5in}L_i=-f_{y_i}+\log\sum_j%20e^{f_j})，
 
     + 计算梯度，
     + 梯度下降，Loop——W减![](https://render.githubusercontent.com/render/math?math=\nabla_WL)\* learning_rate后重复上述步骤。
