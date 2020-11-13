@@ -35,7 +35,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 ### 向量范数度量图片差异
 **范数(Norm)，是具有“长度”概念的函数，为向量空间内的所有向量赋予大小**，L1和L2距离指的就是两个向量的差向量的L1和L2范数，其中向量的L2范数类似于矩阵的F范数。
 <div align=center>
-<img src="assets/L1L2_distance.png" width="70%" height="70%">
+<img src="assets/L1L2_distance.png" width="50%" height="50%">
 </div>
 
 通过slide里这张图，可以直观地理解其定义和差异。
@@ -132,19 +132,19 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 简单来说，过拟合是一种在训练集上损失很小拟合程度很高但在测试集上准确率很低预测效果很差的现象，其原因在于模型过于复杂过于贴合训练集导致泛化到其他数据集的能力差，下面几张图都来自cs229的slides和吴老师手写的notes，
 
 <div align=center>
-<img src="assets/overfit_1.jpg" width="70%" height="70%">
+<img src="assets/overfit_1.jpg" width="50%" height="70%">
 </div>
 
 所谓过于复杂体现在模型对应的函数中就是上图的样子，模型加入了太多的变量（特征或者特征间关联），导致模型过于复杂，目前已经探索出[非常多手段](https://www.zhihu.com/question/59201590/answer/167392763)避免上述情况发生，
 
 <div align=center>
-<img src="assets/overfit_2.jpg" width="60%" height="60%">
+<img src="assets/overfit_2.jpg" width="50%" height="60%">
 </div>
 
 课上提到其中两种，分别是减少特征数量和正则化，但很多时候很难舍弃某些特征，当你舍弃一部分特征变量时，也舍弃了问题中的一些信息，正则化则是通过降低特征变量参数大小的方式来防止过拟合，
 
 <div align=center>
-<img src="assets/overfit_3.jpg" width="70%" height="70%">
+<img src="assets/overfit_3.jpg" width="50%" height="70%">
 </div>
 
 正则项也称罚项，正如图中写到的，我常将其抽象地理解为“假装帮助模型进行拟合实则通过自己的强度抑制模型的成长”，可以限制某些特征![](https://render.githubusercontent.com/render/math?math=\theta)或者![](https://render.githubusercontent.com/render/math?math=\W)的大小，直观来讲让函数变化没那么曲折，从而降低模型复杂程度，提高泛化能力。
