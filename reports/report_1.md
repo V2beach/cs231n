@@ -7,11 +7,11 @@
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
 
-会将我学习到的，课上讲到的核心内容、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花、边学边忘，全文手码自己的思考和理解，参考资料都整理在文末，转载请注明出处。
+会将我学习到的，课上讲到的核心内容、自己的思考和理解、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花、边学边忘，参考资料都整理在文末，转载请注明出处。
 
 cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即用于视觉识别的卷积神经网络，Lecture 1\~4通过CV和ML基本概念及算法原理讲解了Visual Recognition问题的处理流程和学习DL必要的前置ML知识，我也趁这段时间，借助花书和统计学习方法恶补了必要的数学知识；Lecture 5\~end才从CNN讲起，进入课程主题。
 
-由于GitHub和知乎都不支持LaTeX Formula，只好选择用外部的公式渲染工具将源码转成图片，从博客blog.v2beach.cn可以获取原公式。
+由于GitHub和知乎都不支持LaTeX Formula，只好选择用外部的公式渲染工具将源码转成图片，原公式会陆续上传到[博客](blog.v2beach.cn)。
 
 # Lecture2 Image Classification
 
@@ -193,7 +193,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 + 训练：
     + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x^{(i)},W)_j)给m个样本根据n个特征分别打出c个类别的得分。
     + 计算损失，SVM用的是合页损失，公式是![](https://render.githubusercontent.com/render/math?math=L=\frac{1}{N}\sum_i\sum_{j\neq%20y^{(i)}}\left[\max(0,s_j-s_{y^{(i)}}%2B\Delta)\right]%2B\lambda\sum_k\sum_l%20W_{k,l}^2)，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，所以每个样本预测的损失就是-(正确分类yi得分-(错误分类j得分+边界))的和![](https://render.githubusercontent.com/render/math?math=L_i=\sum_{j\neq%20y^{(i)}}\max(0,x^{(i)}w_j-x^{(i)}w_{y^{(i)}}%2B\Delta))，这也是计算梯度时将主要分析的式子。
-    + 计算梯度，只要不犯像我一样的错误，看到矩阵求导就想系统地学矩阵求导术，按照**碰到矩阵求梯度就逐元素（或者逐向量）求导**的思路，这里的梯度还是比较好求的，将式子展开比如只有三个类别1,2,3且正确分类是类别2，得到![](https://render.githubusercontent.com/render/math?math=L_i=\max(0,x^{(i)}w_1-x^{(i)}w_{2}%2B\Delta)%2B\max(0,x^{(i)}w_3-x^{(i)}w_{2}%2B\Delta))，可以得到当![](https://render.githubusercontent.com/render/math?math=s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)时，对W求梯度及对W内的向量w1,w2,w3求导，结果会是![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{y^{(1)}}}L_i=x^{(i)},\Delta_{w_{y^{(2)}}}L_i=-2x^{(i)},\Delta_{w_{y^{(3)}}}L_i=x^{(i)})，结合上述易得式![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{y^{(i)}}}L_i=-\left(\sum_{j\neq%20y^{(i)}}\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)\right)x^{(i)})，![](https://render.githubusercontent.com/render/math?math=\Delta_{w_{j}}L_i=\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)x^{(i)})，这个梯度公式结合上面我举的例子就很好理解，且由于复合函数较为简单，就没有费力用链式法则而是直接展开，其中花体1是示性函数中的指示函数，括号内容为真则为1，否则为0。
+    + 计算梯度，只要不犯像我一样的错误，看到矩阵求导就想系统地学矩阵求导术，按照**碰到矩阵求梯度就逐元素（或者逐向量）求导**的思路，这里的梯度还是比较好求的，将式子展开比如只有三个类别1,2,3且正确分类是类别2，得到![](https://render.githubusercontent.com/render/math?math=L_i=\max(0,x^{(i)}w_1-x^{(i)}w_{2}%2B\Delta)%2B\max(0,x^{(i)}w_3-x^{(i)}w_{2}%2B\Delta))，可以得到当![](https://render.githubusercontent.com/render/math?math=s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)时，对W求梯度及对W内的向量w1,w2,w3求导，结果会是![](https://render.githubusercontent.com/render/math?math=\nabla_{w_{y^{(1)}}}L_i=x^{(i)},\nabla_{w_{y^{(2)}}}L_i=-2x^{(i)},\nabla_{w_{y^{(3)}}}L_i=x^{(i)})，结合上述易得式![](https://render.githubusercontent.com/render/math?math=\nabla_{w_{y^{(i)}}}L_i=-\left(\sum_{j\neq%20y^{(i)}}\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)\right)x^{(i)})，![](https://render.githubusercontent.com/render/math?math=\nabla_{w_{j}}L_i=\mathbb%201(s_j^{(i)}-s_{y^{(i)}}^{(i)}%2B\Delta%20>0)x^{(i)})，这个梯度公式结合上面我举的例子就很好理解，且由于复合函数较为简单，就没有费力用链式法则而是直接展开，其中花体1是示性函数中的指示函数，括号内容为真则为1，否则为0。
     + 梯度下降，Loop——W减![](https://render.githubusercontent.com/render/math?math=\nabla_WL)\* learning_rate后重复上述步骤。
 + 预测：
     + 用学习到的权重矩阵W给数据打分；
@@ -228,17 +228,24 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 [说在前面](#assignment1-svm)，设![](https://render.githubusercontent.com/render/math?math=X=\left[\begin{matrix}-x^{(1)}-\\\\-x^{(2)}-\\\\\vdots\\\\-x^{(m)}-\end{matrix}\right]\in\mathbb%20R^{m\times%20n})，![](https://render.githubusercontent.com/render/math?math=\vec%20y=\left[\begin{matrix}y^{(1)}\\\\y^{(2)}\\\\\vdots\\\\y^{(m)}\end{matrix}\right]\in\mathbb%20R^{m})，![](https://render.githubusercontent.com/render/math?math=W=\left[\begin{matrix}\mid\\\\w_{1},w_{2},\dots,w_{c}\\\\\mid\end{matrix}\right]\in\mathbb%20R^{n\times%20c})，则有![](https://render.githubusercontent.com/render/math?math=S=XW\in\mathbb%20R^{m\times%20c})其中![](https://render.githubusercontent.com/render/math?math=s^{(i)}_{j}=(x^{(i)}W)_j\in%20R)指第i个样本在第j个类别的得分。
 
+Softmax相比SVM对打分多一步转化为概率的处理![](https://render.githubusercontent.com/render/math?math=P(y=k|x=x^{(i)})=\frac{e^{s^{(i)}_k}}{\sum_je^{s^{(i)}_j}}\in%20R)也可以写作![](https://render.githubusercontent.com/render/math?math=p^{(i)}_{j})，指第i个样本在c个类别中被预测为j的概率，sj和pj是m维列向量，另外![](https://render.githubusercontent.com/render/math?math=P\in\mathbb%20R^{m\times%20c})。
+
+上传了[手写的推导过程和理解](https://github.com/V2beach/cs231n/tree/main/reports/notes)，里面有很多没整理在report的内容，比如我**对公式中下标的理解（下标和上文提到的维度一样，都是理解和实现算法最基本的也是至关重要的一部分）**，但是观感不太好。
+
 ##### 算法原理
 
 + 训练
     + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x^{(i)},W)_j)给m个样本根据n个特征分别打出c个类别的得分。
-    + 计算损失，Softmax用的是交叉熵损失，将用到的公式有三个，三者拆分自同一个复合函数![](https://render.githubusercontent.com/render/math?math=L_i=-\log\left(\frac{e^{f_{y_i}}}{\sum_j%20e^{f_j}}\right)\hspace{0.5in}\text{or%20equivalently}\hspace{0.5in}L_i=-f_{y_i}+\log\sum_j%20e^{f_j})，
-
-    + 计算梯度，
+    + 计算损失，Softmax用的是交叉熵损失，将用到的公式有三个，三者拆分自同一个复合函数<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}L_i%26=-\sum_k^c\p_{(i,k)}\log_e\left(p_k^{(i)}\right)\\\\p_k^{(i)}%26=\frac{e^{s_{k}^{(i)}}}{\sum_j%20e^{s_j^{(i)}}}\\\\s_m^{(i)}%26=\left(x^{(i)}W\right)_m\end{aligned}\end{equation})，<br>下文为了公式易读，会省略大部分上标![](https://render.githubusercontent.com/render/math?math={(i)})，只留![](https://render.githubusercontent.com/render/math?math=x^{(i)},y^{(i)})，非矩阵的向量求导都默认是对样本![](https://render.githubusercontent.com/render/math?math=x^{(i)})来计算的。<br>分别聊一下三个公式的意义，交叉熵——信息论的那块，出自花书，我已经看过很多遍了；Softmax的意义再聊一下，同时注意别跟上下文重复；打分函数很简单。
+    + 计算梯度，损失对权重的梯度虽然已经求过一次了，但这里的稍复杂些，所以会用较长篇幅整理更完整的公式，这回求梯度贪心一点，目标不再是只求![](https://render.githubusercontent.com/render/math?math=\nabla_{W}L_i)，也要求![](https://render.githubusercontent.com/render/math?math=\nabla_{X}L_i,\nabla_{\textbf%20b}L_i)，为之后的反向传播和神经网络做一点铺垫——![](https://render.githubusercontent.com/render/math?math=\nabla_{W}L_i=\frac{\partial%20L_i}{\partial%20W}=\frac{\partial%20L_i}{\partial%20P}\frac{\partial%20P}{\partial%20S}\frac{\partial%20S}{\partial%20W})（是熟悉的复合函数求导链式法则！），即![](https://render.githubusercontent.com/render/math?math=\nabla_{w_k}L_i=\frac{\partial%20L_i}{\partial%20w_k}=\frac{\partial%20L_i}{\partial%20p_\beta}\frac{\partial%20p_\beta}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_k})，而![](https://render.githubusercontent.com/render/math?math=\nabla_{X}L_i,\nabla_{\textbf%20b}L_i)只需要改变![](https://render.githubusercontent.com/render/math?math=\frac{\partial%20s_m}{\partial%20w_k})为![](https://render.githubusercontent.com/render/math?math=\frac{\partial%20s_m}{\partial%20x^{(i)}})和![](https://render.githubusercontent.com/render/math?math=\frac{\partial%20s_m}{\partial%20\textbf%20b})即可。<br>我们逐个偏导来求，首先求第一个，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\frac{\partial%20L_i}{\partial%20p_\beta}%20\hspace{0.5in}%26=\frac{\partial}{\partial%20p_\beta}\left(-\sum^c_\beta{\p_{i,\beta}log{p_\beta}}\right)\\\\%26=-\sum^c_\beta{\p_{i,\beta}}\frac{\partial%20log{p_\beta}}{\partial%20p_\beta}\\\\%26=-\sum^c_\beta{\p_{i,\beta}}\frac{1}{p_\beta}\end{aligned}\end{equation})<br>然后求较简单的第三个，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\frac{\partial%20s_m}{\partial%20w_k}%20\hspace{0.5in}%26=\frac{\partial}{\partial%20w_k}\left({x^{(i)}}{w_m}\right)\\\\%26=\mathbb%201(m=k)x^{(i)}\\\\\frac{\partial%20s_m}{\partial%20x^{(i)}}%20\hspace{0.5in}%26=\frac{\partial}{\partial%20x^{(i)}}\left({x^{(i)}}{w_m}\right)\\\\%26=w_m\\\\\frac{\partial%20s_m}{\partial\textbf%20b}%20\hspace{0.5in}%26=\frac{\partial}{\partial%20\textbf%20b}\left({x^{(i)}}{w_m}%2Bb\right)\\\\%26=1\end{aligned}\end{equation})<br>最后求第二个，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\frac{\partial%20p_\beta}{\partial%20s_m}%20\hspace{0.5in}%26=\frac{\partial}{s_m}\left(\frac{e^{s_{\beta}}}{\sum_j%20e^{s_j}}\right)\\\\%26=\frac{(e^{s_\beta})^'\sum_j%20e^{s_j}-e^{s_\beta}(\sum_j%20e^{s_j})^'}{(\sum_j%20e^{s_j})^2}\\\\%26=\begin{cases}\frac{e^{s_\beta}\sum_j%20e^{s_j}-e^{s_\beta}e^{s_\beta}}{(\sum_j%20e^{s_j})^2}=p_\beta-p_\beta^2%26\beta%20=m\\\\\frac{-e^{s_\beta}e^{s_m}}{(\sum_j%20e^{s_j})^2}=-p_\beta%20p_m%26\beta%20!=m\end{cases}\end{aligned}\end{equation})<br>将三个偏导用链式法则乘起来，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{w_k}L_i%26=\frac{\partial%20L_i}{\partial%20w_k}\\\\%26=\frac{\partial%20L_i}{\partial%20p_\beta}\frac{\partial%20p_\beta}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_k}\\\\%26=-\sum^c_\beta{\p_{i,\beta}}\frac{1}{p_\beta}\times{\begin{cases}p_\beta-p_\beta^2%26\beta%20=m\\\\-p_\beta%20p_m%26\beta%20!=m\end{cases}}\times\mathbb1(m=k)x^{(i)}\end{aligned}\end{equation})<br>其中![](https://render.githubusercontent.com/render/math?math=\p_{i,\beta}=\mathbb1(\beta=y^{(i)}))（原因!），且![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\frac{\partial%20s_m}{\partial%20w_k}=\mathbb%201(m=k)x^{(i)}\end{aligned}\end{equation})（好理解，只有对应的w可以对s产生影响，这样s才可以对w求梯度，[注里写到了原因](#注)，所以这里k直接写为m）<br>则<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}-\sum^c_\beta{\p_{i,\beta}}%26=-\sum^c_\beta{\mathbb1(\beta=y^{(i)})}\\\\%26=-1(\beta\\\%20\\\%20\\\%20\\\%20\\\%20\text{is}\\\%20\\\%20\\\%20\\\%20y^{(i)})\end{aligned}\end{equation})，且![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\frac{\partial%20s_m}{\partial%20w_k}=\frac{\partial%20s_m}{\partial%20w_m}=x^{(i)}\end{aligned}\end{equation})，<br>这时，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{w_k}L_i%26=\frac{\partial%20L_i}{\partial%20w_k}\\\\%26=\frac{\partial%20L_i}{\partial%20p_\beta}\frac{\partial%20p_\beta}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_k}\\\\%26=\frac{\partial%20L_i}{\partial%20p_{y^{(i)}}}\frac{\partial%20p_{y^{(i)}}}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_m}\\\\%26={x^{(i)}}^T\times{\begin{cases}p_{y^{(i)}}-1%26m=y^{(i)}\\\\p_m%26m!=y^{(i)}\end{cases}}\end{aligned}\end{equation})<br>同理可得（简化了一下公式），<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{x^{(i)}}L_i%26=\left(p_m-\mathbb1(m=y^{(i)})\right)\times%20w_m^T\end{aligned}\end{equation})<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{\textbf%20b}L_i%26=p_m-\mathbb1(m=y^{(i)})\end{aligned}\end{equation})，<br>实际计算时要时刻清楚各矩阵维度，否则很容易乱套。
     + 梯度下降，Loop——W减![](https://render.githubusercontent.com/render/math?math=\nabla_WL)\* learning_rate后重复上述步骤。
 + 预测
+    + 用学习到的权重矩阵W给数据打分；
+    + 根据最高分预测类别。
 
 ##### 代码分析
+
+其实现跟svm基本相同，仅有些许区别，但为了结构完整把全过程又写了一遍。
 
 + [预操作](#assignment1-svm)
 + [数据处理及概况](#assignment1-svm)
@@ -251,8 +258,32 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
         + class LinearSVM(LinearClassifier)
         + subclass Softmax(LinearClassifier)
             + softmax_loss_vectorized(self.W, X_batch, y_batch, reg)
+    + train——整个函数就是实现了一个梯度下降，随机初始化权重矩阵self.W，这是个始终存在于LinearClassifier类内的变量，并开始num_iters次循环调用loss函数计算gradient更新W，loss值本身是没用的，记录到history里以可视化训练过程
+    + predict——y_predict = argmax(X.dot(self.W), axis=1)，对axis的理解很重要，我的理解都在注释里
+    + softmax_loss_vectorized——不同于svm，softmax的公式本身就是矩阵乘积的形式，所以循环和向量化的写法都很好写，
+        + 算得分，scores = X.dot(W)
+        + 变概率，probability = softmax(scores)
+        + 求损失，根据probability和交叉熵公式计算loss
+        + 推梯度，用上文的梯度公式易求得gradient
+    + gradient_check——[梯度检查](https://github.com/V2beach/cs231n/blob/main/assignment1/cs231n/gradient_check.py)像[上文](#梯度的理解最优化原理梯度计算梯度下降)说的一样，用到了中心差商公式，结果跟微分求得的梯度比较达到梯度检查的目的，是实际实现时非常有效的技巧
++ 在验证集上调超参及训练
+    + 调参和训练的过程其实是合在一起进行的，这里只需要调learning_rate和regularization_strength两个超参，一边用不同的超参训练模型一边评估在验证集上的预测结果，当尝试完所有的组合，也就得到了用最优组合训练的模型，即LinearClassifier的实例化对象。
++ 预测及评估
++ 权重矩阵可视化，可以发现权重矩阵对应的图像其实拥有对应分类物体的轮廓，这也印证了之前线性分类器是模板匹配的判断
+
+##### 注——
+[这个问题](#assignment1-softmax)来自Lecture3且其思想在求导求梯度相关的计算中随处可见，但有时可能会因为矩阵计算比较复杂而想不明白，其实很简单，如果a改变不会引起b的改变，即a对b无影响，或者更形式化地说![](https://render.githubusercontent.com/render/math?math=\lim_{\Delta%20a\rightarrow%200}\frac{\Delta%20b}{\Delta%20a}=0)，那么b关于a求方向导数一定为0。
+
+？？？
+
+所以要...使用小而具体的例子：有些读者可能觉得向量化操作的梯度计算比较困难，建议是写出一个很小很明确的向量化例子，在纸上演算梯度，然后对其一般化，得到一个高效的向量化操作形式。
 
 ### SVM和Softmax比较及借助linear classifier demo整体理解
+
+<div align=center>
+<img src="assets/svmvssoftmax.png" width="50%" height="70%">
+</div>
+
 [knn and linear classifier demos](http://vision.stanford.edu/teaching/cs231n-demos/)，我也在这个repo里做了[备份](https://github.com/V2beach/cs231n/tree/main/demos)，以防今后网站迁移或域名更改。
 
 整体上理解，比如svm是试图让决策边界/决策超平面距离两个类别的数据尽量远；交叉熵和其他损失的区别之类的。
@@ -267,10 +298,11 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 ##### 算法原理
 ##### 代码分析
 
-（最后用typora生成目录，
-搞清楚重点是什么，report是简化过的之前写的总结+Lecture content+公式推导组成的核心内容，重点之前已经都写过了没什么好拖的，
-赶紧写完一遍再改，强迫自己完成了之后再优化。
-knn还有没解决的问题，归一化没写完，熟悉节奏了
+先把体力活干完，softmax和2-nn，之后再补充，记得softmax的“铺垫”。
+一个小时只能写一页latex源码，绝对不能这么写了，找效率高的办法，
+从今往后再也不会徒手码公式了。
+
+之前初学的时候时常卡在很多细枝末节的地方，且总苦于搜不到多少讲得透彻的中文资料，所以借最近学cs231n的机会，本着开放分享的互联网精神，写了一个指南向的报告，可以为入门的伙计们提供一点新的思路。
 
 # References
 \[1\] [L1-norm和L2-norm两种范数的特点和区别？- Andy Yang](https://www.zhihu.com/question/26485586/answer/616029832)
@@ -283,22 +315,18 @@ knn还有没解决的问题，归一化没写完，熟悉节奏了
 
 \[5\] [机器学习中使用正则化来防止过拟合是什么原理？- 叶芃](https://www.zhihu.com/question/20700829/answer/119314862)
 
-\[6\] [Bye Bye Disco - 张蔷](https://www.youtube.com/watch?v=DRQQ-oK_rdw)
+\[6\] [全微分 - 维基百科](https://zh.wikipedia.org/wiki/全微分)
 
-\[7\] [全微分 - 维基百科](https://zh.wikipedia.org/wiki/全微分)
+\[7\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 马同学](https://www.zhihu.com/question/36301367/answer/156102040)
 
-\[8\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 马同学](https://www.zhihu.com/question/36301367/answer/156102040)
+\[8\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 忆臻](https://www.zhihu.com/question/36301367/answer/142096153)
 
-\[9\] [如何直观形象的理解方向导数与梯度以及它们之间的关系？- 忆臻](https://www.zhihu.com/question/36301367/answer/142096153)
+\[9\] [梯度是向量，方向导数是一个数 - BoniuPoniu](https://blog.csdn.net/weixin_43702920/article/details/107435227)
 
-\[10\] [梯度是向量，方向导数是一个数 - BoniuPoniu](https://blog.csdn.net/weixin_43702920/article/details/107435227)
+\[10\] [统计学习方法 - 李航](https://www.google.com/)
 
-\[11\] [统计学习方法 - 李航](https://www.google.com/)
+\[11\] [CS231 作业1 - Doraemonzzz](https://doraemonzzz.com/2019/03/02/CS231%20作业1/)
 
-\[12\] [CS231 作业1 - Doraemonzzz](https://doraemonzzz.com/2019/03/02/CS231%20作业1/)
+\[12\] [Softmax损失函数及梯度的计算 - 杨勇](https://zhuanlan.zhihu.com/p/21485970)
 
-\[13\]
-
-
-
-svm softmax梯度求导的三五个笔记，WILL笔记，
+\[13\] [详解softmax函数以及相关求导过程 - 忆臻](https://zhuanlan.zhihu.com/p/25723112)（SCIR）
