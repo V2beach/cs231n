@@ -185,7 +185,10 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 之后公式里的矩阵都会按代码中的维度计算，即[Lecture 3](#lecture3-loss-functions-and-optimization)提到的矩阵的转置，将所有数据的维度都了然于胸是理解并实现算法的至关重要的一步。
 
+设![](https://render.githubusercontent.com/render/math?math=X=\left[\begin{matrix}-(x^{(1)})^T-\\-(x^{(2)})^T-\\\vdots\\-(x^{(m)})^T-\end{matrix}\right]\in\mathbb%20R^{m\times%20d})，![](https://render.githubusercontent.com/render/math?math=\vec%20y=\left[\begin{matrix}y^{(1)}\\y^{(2)}\\\vdots\\y^{(m)}\end{matrix}\right]\in\mathbb%20R^{m},W\in\mathbb%20R^{d\times%20c})
+
 ##### 算法原理
+
 + 训练：
     + 根据![](https://render.githubusercontent.com/render/math?math=S=f(X%3BW)=XW)或![](https://render.githubusercontent.com/render/math?math=s_j=f(x_i,W)_j)（这里和下面的wtx维度全都错了！照着自己的笔记写，比他写的清楚得多，也快得多，看他的还得另作理解，看自己的可以不加思索地整理）给m个样本根据n个特征分别打出c个类别的得分；
     + 计算损失，SVM用的是合页损失，公式是![](https://render.githubusercontent.com/render/math?math=L=\frac{1}{N}\sum_i\sum_{j\neq%20y_i}\left[\max(0,s_j-s_{y_i}%2B\Delta)\right]%2B\lambda\sum_k\sum_l%20W_{k,l}^2)，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，每个样本的损失计算方式是![](https://render.githubusercontent.com/render/math?math=L_i=\sum_{j\neq%20y_i}\max(0,w_j^Tx_i-w_{y_i}^Tx_i%2B\Delta))，这也是计算梯度时将主要分析的式子。
