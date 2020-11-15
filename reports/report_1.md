@@ -273,14 +273,6 @@ Softmax相比SVM对打分多一步转化为概率的处理![](https://render.git
 ##### 注——
 [这个问题](#assignment1-softmax)来自Lecture3且其思想在求导求梯度相关的计算中随处可见，但有时可能会因为矩阵计算比较复杂而想不明白，其实很简单，如果a改变不会引起b的改变，即a对b无影响，或者更形式化地说![](https://render.githubusercontent.com/render/math?math=\lim_{\Delta%20a\rightarrow%200}\frac{\Delta%20b}{\Delta%20a}=0)，那么b关于a求方向导数一定为0。
 
-？？？
-
-用别人的东西实在是不得劲，今晚就还给zzh了，刚好两天两夜。
-
-还是买台电脑吧。
-
-所以要...使用小而具体的例子：有些读者可能觉得向量化操作的梯度计算比较困难，建议是写出一个很小很明确的向量化例子，在纸上演算梯度，然后对其一般化，得到一个高效的向量化操作形式。
-
 ### SVM和Softmax比较及linear classifier demo
 
 这部分会这样组织——首先分别理解svm和softmax，再通过两者间对比加深理解，最后用交互demo。
@@ -314,7 +306,7 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 + **数值稳定**<br>Lecture里讲到过，从上文softmax公式也可以看出，显而易见的是经过exp处理后数值会发生上溢，且如果得分很少，比如W在训练开始时数值很小，分母会有下溢为0的可能，除以0也会导致结果出错。应对方案——softmax的分子分母同时乘一个常数C，常数可以写进exp里为logC，如果让logC is maxS，则一方面打分函数最大值为0，exp函数上限变为1，消除了上溢的可能；另一方面可以保证分子至少有一个1，不会发生除以0的请开给你，也没了下溢的风险。
 + **交叉熵**<br>这部分推荐看一看花书，信息论中一个事件的**自信息**定义为I=-logP(x)，P(x)是事件发生的概率，即认为较不可能发生的事件具有更高的信息量，自信息只对应单个事件，我们用**信息熵/香农熵**来量化整个概率分布中的不确定性总量或者说信息总量，H(x)=E(I)=-E(logP(x))，另有**相对熵/KL散度**来衡量两个分布之间的差异，或者说用Q(x)对P(x)建模的近似程度，![](https://render.githubusercontent.com/render/math?math=D_{KL}(P||Q)=\mathbb%20E_{x~P}[log\frac{P(x)}{Q(x)}]=\mathbb%20E_{x~P}[log{P(x)}-log{Q(x)}]=\sum_x{P(x)log[\frac{P(x)}{Q(x)}]})，注意这里x是满足真实概率分布P的，“真实”分布就是所有概率密度都分布在正确的类别上，即\[0, 0, ... , 1, ... ,0\]one-hot vector，这正是softmax中![](https://render.githubusercontent.com/render/math?math=p=\mathbb%201())的原因，**交叉熵**![](https://render.githubusercontent.com/render/math?math=H(P,Q)=H(x)%2BD_{KL}(P||Q)=-\mathbb%20E_{x~P}[logP(x)]%2B\mathbb%20E_{x~P}[log{P(x)}-log{Q(x)}]=\mathbb%20E_{x~P}[-log{Q(x)}])可以理解为信息熵和相对熵之和，那么由于真实分布的信息熵是个定值，最小化交叉熵的过程其实就是最小化两个分布之间的相对熵，即让两个分布尽可能相似/预测的概率分布尽可能接近真实概率分布。
 + **交叉熵损失函数（代价函数）**<br>即用交叉熵公式来算的损失函数，基本上是和softmax固定搭配同时出现的，有两个原因，一方面交叉熵损失函数需要输入一个概率，而softmax刚好可以提供这个概率；另一方面参见[softmax算法原理](#assignment1-softmax)，我写了很详细的证明，其中有一步，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{w_k}L_i=\frac{\partial%20L_i}{\partial%20p_\beta}\frac{\partial%20p_\beta}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_k}=-\sum^c_\beta{\p_{i,\beta}}\frac{1}{p_\beta}\times{\begin{cases}p_\beta-p_\beta^2%26\beta%20=m\\\\-p_\beta%20p_m%26\beta%20!=m\end{cases}}\times\mathbb1(m=k)x^{(i)}\end{aligned}\end{equation})，<br>可以发现前两个偏导正是交叉熵和softmax两个函数的偏导，其中pβ是刚好可以抵消的，如果没有softmax，求梯度过程中存在的1/pβ很容易导致溢出，总的来说，**softmax恰好填补了cross-entropy derivative numerically unstable(overflow)这个漏洞且满足了交叉熵的输入需求。**——这部分是我对softmax+cross-entropy-loss这个搭配的理解。
-+ **到底为什么用交叉熵损失？**<br>**上面谈到了softmax/交叉熵的起源和理解，又谈到了两者搭配的优秀特性即总是共同出现的原因，这里如果想说明白交叉熵损失相较于MSE均方误差的优势，就要提到激活函数的概念**，上文中提到的softmax函数其实就是激活函数activation function，Lecture5里马上就会写到，简单来说，激活函数可以引入非线性因素，解决线性模型所不能解决的问题。当我们使用类似sigmoid（σ）的激活函数求梯度时，如果使用均方误差，梯度公式会是<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=(y_{pred}-y)\sigma^'\times%20x,\nabla_bL=\frac{\partial%20L}{\partial%20b}=(y_{pred}-y)\sigma^')，<br>这意味着损失函数的梯度和sigmoid的梯度是成正比的，<br><div align=center><img src="assets/sigmoid.png" width="50%" height="50%"></div><br>从上图的几种sigmoid函数图像可以看出，**sigmoid函数σ(z)在z很大或很小的时候由于sigmoid'极小，损失函数梯度都会非常小，即参数更新速度/训练速度（速率）很慢**，但实际上在初始化W后，打分很高或很低的情况时很常见的，**这时就会出现“错得越离谱，学得越慢”的自暴自弃现象**，是种很差的特性；同样是用sigmoid激活函数，如果用交叉熵损失，公式如下，<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=x(\sigma-y),\nabla_bL=\frac{\partial%20L}{\partial%20b}=\sigma-y)，<br>相比之下，交叉熵损失中梯度大小只与z和真实值y相关，呈现出来的性质优于MSE，多分类问题也更倾向于应用交叉熵损失。
++ **到底为什么用交叉熵损失？**<br>**上面谈到了softmax/交叉熵的起源和理解，又谈到了两者搭配的优秀特性即总是共同出现的原因，这里如果想说明白交叉熵损失相较于MSE均方误差的优势，就要提到激活函数的概念**，上文中提到的softmax函数其实就是激活函数activation function，Lecture5里马上就会写到，简单来说，激活函数可以引入非线性因素，解决线性模型所不能解决的问题。当我们使用类似sigmoid（σ）的激活函数求梯度时，如果使用均方误差，梯度公式会是<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=(y_{pred}-y)\sigma^'\times%20x,\nabla_bL=\frac{\partial%20L}{\partial%20b}=(y_{pred}-y)\sigma^')，<br>这意味着损失函数的梯度和sigmoid的梯度是成正比的，<br><div align=center><img src="assets/sigmoid.png" width="50%" height="50%"></div><br>[sigmoid图源](https://en.wikipedia.org/wiki/Sigmoid_function)(sigmoid≠logistic!)，从上图的几种sigmoid函数图像可以看出，**sigmoid函数σ(z)在z很大或很小的时候由于sigmoid'极小，损失函数梯度都会非常小，即参数更新速度/训练速度（速率）很慢**，但实际上在初始化W后，打分很高或很低的情况时很常见的，**这时就会出现“错得越离谱，学得越慢”的自暴自弃现象**，是种很差的特性；同样是用sigmoid激活函数，如果用交叉熵损失，公式如下，<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=x(\sigma-y),\nabla_bL=\frac{\partial%20L}{\partial%20b}=\sigma-y)，<br>相比之下，交叉熵损失中梯度大小只与z和真实值y相关，呈现出来的性质优于MSE，多分类问题也更倾向于应用交叉熵损失。
 
 ##### SVM vs. Softmax
 
@@ -338,7 +330,6 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 in slides and assignment, about Color Histogram and Histogram of Oriented Gradients
 
 ### 反向传播及相关知识
-下面会结合几个官方的计算图svg写一下我自己对back propagation的理解。
 
 反向传播是一个优美的局部过程。
 
@@ -346,29 +337,82 @@ in slides and assignment, about Color Histogram and Histogram of Oriented Gradie
 
 >This extra multiplication (for each input) due to the chain rule can turn a single and relatively useless gate into a cog in a complex circuit such as an entire neural network.
 
-官方笔记这段对bp的概括，很完整，讲得很透彻，下面是课上的两个具体例子，跟着算完就会了。
+官方笔记这段对bp的概括，很完整，讲得很透彻，下面是课上的具体例子，跟着算完就会了。
 
-bp_sigmoid.svg
+##### 反向传播的计算
 
-bp_max.svg
+<div align=center>
+<img src="assets/unit.png" width="50%" height="50%">
+</div>
 
-### 模块化计算单元
+上图是计算图中每个单元的计算过程，正向将x和y代入f求z，反向用上游梯度∇zL乘x和y方向的本地梯度（代入中间值）∇xz, ∇yz求得下游梯度∇xL, ∇yL。
 
->我真的很喜欢思考计算图这样一个东西，这让我感觉非常开心。
+下图展示了计算的视觉化过程。前向传播从输入计算到输出（绿色），反向传播从尾部开始，根据链式法则递归地向前计算梯度（显示为红色），一直到网络的输入端。可以认为，梯度是从计算链路中回流。
 
-unit.png
+<div align=center>
+<img src="assets/bp_sigmoid.svg" width="80%" height="80%">
+</div>
 
-unit_sigmoid.png
+注意，正向时线上流动的是各函数的I/O，计算单元里存着f(x)之类的函数；而反向时线上流动的是gradient，计算单元里存的是求导公式。另外，正反向两个pass间，必须要理解的一个区别是，正向时（从左到右）如果一个节点输入连着两条线，这两个输入的运算方式由单元的函数决定，如果输出连着两条线，两条线上的输出是相同的，不同的输出对应不同的单元；**而反向时（从右到左）如果一个节点输入连着两条线，这俩gradient相加作为输入，如果输出连着两条线，两方向的求导公式不同。**
 
-### 矩阵的Forward/Back Propagation
+结合上图，用bp算一下后面相关I/O标了变量名的四个单元（即sigmoid_logistic）。
 
-matrixbp_1.png
+![](https://render.githubusercontent.com/render/math?math=\nabla_{sigmoid_{input}}{sigmoid_{output}}=\frac{\partial%20e}{\partial%20a}=\frac{\partial%20e}{\partial%20d}\frac{\partial%20d}{\partial%20c}\frac{\partial%20c}{\partial%20b}\frac{\partial%20b}{\partial%20a}=-\frac{1}{d^2}\times%201\times%20e^b\times%20-1)
 
-matrixbp_2.png
+从前到后分别代入中间值dcba。
+
+##### 模块化计算单元
+
+>我真的很喜欢思考计算图这样一个东西，这让我感觉非常开心。——[Serena Yeung](http://ai.stanford.edu/~syyeung/)
+
+<div align=center>
+<img src="assets/unit_sigmoid.png" width="50%" height="50%">
+</div>
+
+sigmoid其实可以被整合成一个计算单元，正向的计算公式为σ(x)=1/(1+e^-x)，反向的计算公式为(1-σ(x))σ(x)。
+
+简化之后画计算图就是搭积木。
+
+##### 实现时注意的点
+
+>**对前向传播变量进行缓存**：在计算反向传播时，前向传播过程中得到的一些中间变量非常有用。在实际操作中，最好代码实现对于这些中间变量的缓存，这样在反向传播的时候也能用上它们。如果这样做过于困难，也可以（但是浪费计算资源）重新计算它们。
+
+这个技巧其实在手撸ML算法的时候都会用到，包括上面的linear classifier和下面的two-layer neural network，求loss时用到的变量gradient会再用到。
+
+>**在不同分支的梯度要相加**：如果变量x，y在前向传播的表达式中出现多次，那么进行反向传播的时候就要非常小心，使用+=而不是=来累计这些变量的梯度（不然就会造成覆写）。这是遵循了在微积分中的多元链式法则，该法则指出如果变量在线路中分支走向不同的部分，那么梯度在回传的时候，就应该进行累加。
+
+这一点见[回传流中的模式](#回传流中的模式)图。
+
+##### 回传流中的模式
+
+<div align=center>
+<img src="assets/patternsingradientflow.png" width="52%" height="52%">
+</div>
+
+给反向回传流的计算单元起点好听的名字，正向的加法门是反向的梯度分发器，正向的乘法门是反向的梯度交换器，正向的max门是反向的梯度路由器（正向没对输出产生[影响](#注——)的输入不配拥有反向的梯度）。
+
+##### 矩阵的Forward/Back Propagation
+
+<div align=center>
+<img src="assets/matrixbp_1.png" width="50%" height="50%">
+</div>
+
+<div align=center>
+<img src="assets/matrixbp_2.png" width="50%" height="50%">
+</div>
+
+之前讨论的都是单个值的运算，矩阵在线上流动的求法其实也差不多，推过跟这里MSE类似的[softmax-cross entropy求梯度](#assignment1-softmax)时的公式，元素求导合成矩阵梯度时要注意维度，很多地方需要转置。
+
+>使用小而具体的例子：有些读者可能觉得向量化操作的梯度计算比较困难，建议是写出一个很小很明确的向量化例子，在纸上演算梯度，然后对其一般化，得到一个高效的向量化操作形式。
 
 ### Assignment1 Two-Layer Neural Network
-用到了bp的思想但是没有模块化计算。
+
+用到了bp的思想但是没有模块化计算，之后的代码都会被切分成如sigmoid/L2之类的单元，分别写代码。
+
 ##### 算法原理
+
+
+
 ##### 代码分析
 
 
