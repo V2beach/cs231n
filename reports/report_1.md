@@ -1,6 +1,51 @@
-<!-- <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});</script>
-<script type="text/javascript" src="path-to-mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
+- [Lecture1 Course Introduction](#lecture1-course-introduction)
+- [Lecture2 Image Classification](#lecture2-image-classification)
+    - [图像识别的困难](#图像识别的困难)
+    - [向量范数度量图片差异](#向量范数度量图片差异)
+    - [验证集用于超参数调优及交叉验证](#验证集用于超参数调优及交叉验证)
+    - [Assignment1 k-NN](#assignment1-k-nn)
+        - [算法原理](#算法原理)
+        - [代码分析](#代码分析)
+        - [k-NN评价](#k-nn评价)
+- [Lecture3 Loss Functions and Optimization](#lecture3-loss-functions-and-optimization)
+    - [线性分类器](#线性分类器)
+        - [Linear Classifier?](#linear-classifier)
+        - [Template matching!](#template-matching)
+        - [Bias trick, Image data preprocessing](#bias-trick-image-data-preprocessing)
+    - [损失函数](#损失函数)
+        - [再谈正则化](#再谈正则化)
+        - [正则化系数](#正则化系数)
+    - [梯度的理解、最优化原理、梯度计算、梯度下降](#梯度的理解最优化原理梯度计算梯度下降)
+    - [Assignment1 SVM](#assignment1-svm)
+        - [算法原理](#算法原理-1)
+        - [代码分析](#代码分析-1)
+    - [Assignment1 Softmax](#assignment1-softmax)
+        - [算法原理](#算法原理-2)
+        - [代码分析](#代码分析-2)
+        - [注——](#注)
+    - [SVM和Softmax比较及linear classifier demo](#svm和softmax比较及linear-classifier-demo)
+        - [让人迷惑的命名规则](#让人迷惑的命名规则)
+        - [支持向量机和SOFTmax](#支持向量机和softmax)
+        - [SVM vs. Softmax](#svm-vs-softmax)
+        - [Linear Classifier Demo可视化参数影响及训练过程](#linear-classifier-demo可视化参数影响及训练过程)
+    - [线性分类器的评价](#线性分类器的评价)
+- [Lecture4 Neural Networks and Backpropagation](#lecture4-neural-networks-and-backpropagation)
+    - [Features](#features)
+    - [反向传播及相关知识](#反向传播及相关知识)
+        - [反向传播的计算](#反向传播的计算)
+        - [模块化计算单元](#模块化计算单元)
+        - [实现时注意的点](#实现时注意的点)
+        - [回传流中的模式](#回传流中的模式)
+        - [矩阵的Forward/Back Propagation](#矩阵的forwardback-propagation)
+    - [Assignment1 Two-Layer Neural Network](#assignment1-two-layer-neural-network)
+        - [算法原理](#算法原理-3)
+        - [代码分析](#代码分析-3)
+- [写在后面](#写在后面)
+- [References](#references)
 
+<!-- <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type="text/x-mathjax-config">MathJax.Hub.Config({ tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}});</script>
+
+<script type="text/javascript" src="path-to-mathjax/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
 # Lecture1 Course Introduction
 
 课程相关的[Slides, Notes, Papers](http://cs231n.stanford.edu/syllabus.html)及[花书](https://mitpress.mit.edu/books/deep-learning)作为主要参考材料。
@@ -411,34 +456,20 @@ sigmoid其实可以被整合成一个计算单元，正向的计算公式为σ(x
 
 ##### 算法原理
 
+是上文softmax和bp的组合。
 
++ 训练
+    + 区别在于，中间多一层修正线性单元，且有两个W权重矩阵，hidden层的ReLU即f(x)=max(0,x)，求梯度时只需要找到上游梯度矩阵中正向值为0的位置筛为0即可传往下游。
++ 预测
 
 ##### 代码分析
 
+跟之前不同的是，学到的参数是W和b，且被存在了self.params里面。
 
+除此之外，跟svm和softmax的区别无非是多了一层ReLU，链式法则多接几个偏导，再重复写一次就太冗余了，所以详见[代码](https://github.com/V2beach/cs231n/blob/main/assignment1/cs231n/classifiers/neural_net.py)。
 
-
-
-学习经验：
-
-先把体力活干完，softmax和2-nn，之后再补充，记得softmax的“铺垫”。
-一个小时只能写一页latex源码，绝对不能这么写了，找效率高的办法，
-从今往后再也不会徒手码公式了。
-
-之前初学的时候时常卡在很多细枝末节的地方，且总苦于搜不到多少讲得透彻的中文资料，所以借最近学cs231n的机会，本着开放分享的互联网精神，写了一个指南向的报告，可以为入门的伙计们提供一点新的思路。
-
-用github render渲染出来的公式必然没有直接用mathjax（？）那么整齐，这也是没办法的事，我会把report再在blog.v2beach.cn上传一遍。
-
-先输入到完善，再输出，别总急着输出。
-读懂了，学会了，对整体有个系统的概念，才能去写guide，帮助别人。
-
-晚上熬到凌晨五点钟来代替白天的三五个小时是肯定不可取的，根本睡不好，我现在是困傻了。
-
-学习的环境对我的影响实在是太大了，找一个身边有个妹子或者本身环境就比较好的位置学习，效果会好很多。
-
-别想着完美，理解多少就写多少，这是个report，只能反应我目前的学习状况，不是在交作业。
-
-lecture - assignment - report实在是太脱节了。
+# 写在后面
+用github render渲染出来的公式必然没有直接用mathjax那么整齐，是没办法的事，我会把report再在blog.v2beach.cn上传一遍。
 
 # References
 \[1\] [L1-norm和L2-norm两种范数的特点和区别？- Andy Yang](https://www.zhihu.com/question/26485586/answer/616029832)
