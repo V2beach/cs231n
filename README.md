@@ -6,6 +6,7 @@ Up to 2020-11-11, the following has been completed.
 
 ### Reports
 - [Lecture 1~4 report](https://github.com/V2beach/cs231n/blob/main/reports/report_1.md)
+- [Lecture 5~9 report](https://github.com/V2beach/cs231n/blob/main/reports/report_2.md)(undone)
 
 ### Assignment 1
 - [k-Nearest Neighbor](https://github.com/V2beach/cs231n/blob/main/assignment1/knn.ipynb)
@@ -15,7 +16,7 @@ Up to 2020-11-11, the following has been completed.
 - [Image Features](https://github.com/V2beach/cs231n/blob/main/assignment1/features.ipynb)
 
 
-### Assignment 2
+### Assignment 2(undone)
 - [Fully Connected Networks](https://github.com/V2beach/CS231n/blob/main/assignment2/FullyConnectedNets.ipynb)
 - [Batch Normalization](https://github.com/V2beach/CS231n/blob/main/assignment2/BatchNormalization.ipynb)
 - [Dropout](https://github.com/V2beach/CS231n/blob/main/assignment2/Dropout.ipynb)
