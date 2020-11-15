@@ -31,7 +31,7 @@
     - [线性分类器的评价](#线性分类器的评价)
 - [Lecture4 Neural Networks and Backpropagation](#lecture4-neural-networks-and-backpropagation)
     - [Features](#features)
-    - [反向传播及相关知识](#反向传播及相关知识)
+    - [反向传播](#反向传播)
         - [反向传播的计算](#反向传播的计算)
         - [模块化计算单元](#模块化计算单元)
         - [实现时注意的点](#实现时注意的点)
@@ -372,11 +372,9 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 ### Features
 in slides and assignment, about Color Histogram and Histogram of Oriented Gradients
 
-### 反向传播及相关知识
+### 反向传播
 
-反向传播是一个优美的局部过程。
-
->Notice that backpropagation is a beautifully local process. Every gate in a circuit diagram gets some inputs and can right away compute two things: 1. its output value and 2. the local gradient of its output with respect to its inputs. Notice that the gates can do this completely independently without being aware of any of the details of the full circuit that they are embedded in. However, once the forward pass is over, during backpropagation the gate will eventually learn about the gradient of its output value on the final output of the entire circuit. Chain rule says that the gate should take that gradient and multiply it into every gradient it normally computes for all of its inputs.
+>Notice that backpropagation is a beautifully local process.（反向传播是一个优美的局部过程。） Every gate in a circuit diagram gets some inputs and can right away compute two things: 1. its output value and 2. the local gradient of its output with respect to its inputs. Notice that the gates can do this completely independently without being aware of any of the details of the full circuit that they are embedded in. However, once the forward pass is over, during backpropagation the gate will eventually learn about the gradient of its output value on the final output of the entire circuit. Chain rule says that the gate should take that gradient and multiply it into every gradient it normally computes for all of its inputs.
 
 >This extra multiplication (for each input) due to the chain rule can turn a single and relatively useless gate into a cog in a complex circuit such as an entire neural network.
 
