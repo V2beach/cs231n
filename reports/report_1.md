@@ -334,8 +334,37 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 
 # Lecture4 Neural Networks and Backpropagation
 
+### Features
+in slides and assignment, about Color Histogram and Histogram of Oriented Gradients
+
 ### 反向传播及相关知识
-最关键的一个算法之一
+下面会结合几个官方的计算图svg写一下我自己对back propagation的理解。
+
+反向传播是一个优美的局部过程。
+
+>Notice that backpropagation is a beautifully local process. Every gate in a circuit diagram gets some inputs and can right away compute two things: 1. its output value and 2. the local gradient of its output with respect to its inputs. Notice that the gates can do this completely independently without being aware of any of the details of the full circuit that they are embedded in. However, once the forward pass is over, during backpropagation the gate will eventually learn about the gradient of its output value on the final output of the entire circuit. Chain rule says that the gate should take that gradient and multiply it into every gradient it normally computes for all of its inputs.
+
+>This extra multiplication (for each input) due to the chain rule can turn a single and relatively useless gate into a cog in a complex circuit such as an entire neural network.
+
+官方笔记这段对bp的概括，很完整，讲得很透彻，下面是课上的两个具体例子，跟着算完就会了。
+
+bp_sigmoid.svg
+
+bp_max.svg
+
+### 模块化计算单元
+
+>我真的很喜欢思考计算图这样一个东西，这让我感觉非常开心。
+
+unit.png
+
+unit_sigmoid.png
+
+### 矩阵的Forward/Back Propagation
+
+matrixbp_1.png
+
+matrixbp_2.png
 
 ### Assignment1 Two-Layer Neural Network
 用到了bp的思想但是没有模块化计算。
@@ -346,6 +375,7 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 
 
 
+学习经验：
 
 先把体力活干完，softmax和2-nn，之后再补充，记得softmax的“铺垫”。
 一个小时只能写一页latex源码，绝对不能这么写了，找效率高的办法，
