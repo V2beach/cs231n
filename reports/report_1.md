@@ -293,27 +293,28 @@ SVM分类器用的是合页损失(hinge loss)或者最大边界损失(max-margin
 
 svm和softmax是线性分类器最常用的两种损失函数（由损失函数确定是何种线性分类器）。
 
-为什么叫做支持向量机？怎么产生的最大边界？
-+ 其实在SVM(Support Vector Machine)论文刚发表时是被命名为Support Vector Network的，世纪末神经网络没落，遂改名为Machine；那Support Vector呢？
-SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习中SVM区分两类数据时试图找到两个平行的超平面，让两个超平面的间隔margin尽量大，取其中间平面即为决策超平面。那么，以二维空间为例，两条平行直线最少由三个样本点唯一确定，换言之这三个向量支撑起这两条直线，即被称作支持向量。推广到n维空间，支持向量的个数会是n+1个。
-+ margin即边界或者间隔，也就是上文公式中的Δ，详细的推导可以看统计学习方法，我的理解是，由于正则化惩罚也同样作用于Loss中的Δ，相当于是让Δ变得更大以抑制拟合(fit)，所以学习过程中可以达到max-margin的效果。
-
-图示如下。
+**为什么叫做支持向量机？怎么产生的最大边界？**
 
 <div align=center>
 <img src="assets/Svm_max_sep_hyperplane_with_margin.png" width="50%" height="50%">
 </div>
 
-什么是SOFTmax？为什么需要数值稳定？跟交叉熵有什么关系？
++ 其实在SVM(Support Vector Machine)论文刚发表时是被命名为Support Vector Network的，世纪末神经网络没落，遂改名为Machine；那Support Vector呢？
+SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习中SVM区分两类数据时试图找到两个平行的超平面，让两个超平面的间隔margin尽量大，取其中间平面即为决策超平面。那么，以二维空间为例，两条平行直线最少由三个样本点唯一确定，换言之这三个向量支撑起这两条直线，即被称作支持向量。推广到n维空间，支持向量的个数会是n+1个，二维空间中的例子见上图。
++ margin即边界或者间隔，也就是上文公式中的Δ，详细的推导可以看统计学习方法，我的理解是，由于正则化惩罚也同样作用于Loss中的Δ，相当于是让Δ变得更大以抑制拟合(fit)，所以学习过程中可以达到max-margin的效果。
++ 关于公式的解释在[svm算法原理](#assignment1-svm)。
+
+**什么是SOFTmax？为什么需要数值稳定？跟交叉熵有什么关系？**
+
 <div align=center>
 <img src="assets/softmax.png" width="50%" height="50%">
 </div>
-+ softmax，是Logistic的多分类一般化归纳，又称归一化指数函数，
-+ 数值稳定，
-+ 交叉熵，
-+ 从两种角度解释，
 
-整体上理解，比如svm是试图让决策边界/决策超平面距离两个类别的数据尽量远，理解一下最大边界
++ **softmax**<br>是Logistic的多分类一般化归纳，又称归一化指数函数，这个函数本身的作用显而易见，softmax函数将各类别的得分视为对数概率，所以首先进行exp操作然后归一化，将结果压缩为0到1的概率值。而所谓SOFTmax其实是对max的一种模拟，根据上图和函数中的exp操作可以看出，softmax是在有意扩大高低分之间的差距，更趋近max函数\[0, 0, ... , 1, ... ,0\]的one-hot形式vector，用SOFTmax不用max的原因是，max不可导（虽然可以求次梯度但不平滑），相比之下Softmax+Cross-Entropy-Loss从上文我的公式推导可以看出，能够求得非常简洁的梯度算式，关于交叉熵的详解和为什么要用交叉熵损失马上会提到。
++ **数值稳定**<br>Lecture里讲到过，从上文softmax公式也可以看出，显而易见的是经过exp处理后数值会发生上溢，且如果得分很少，比如W在训练开始时数值很小，分母会有下溢为0的可能，除以0也会导致结果出错。应对方案——softmax的分子分母同时乘一个常数C，常数可以写进exp里为logC，如果让logC is maxS，则一方面打分函数最大值为0，exp函数上限变为1，消除了上溢的可能；另一方面可以保证分子至少有一个1，不会发生除以0的请开给你，也没了下溢的风险。
++ **交叉熵**<br>这部分推荐看一看花书，信息论中一个事件的**自信息**定义为I=-logP(x)，P(x)是事件发生的概率，即认为较不可能发生的事件具有更高的信息量，自信息只对应单个事件，我们用**信息熵/香农熵**来量化整个概率分布中的不确定性总量或者说信息总量，H(x)=E(I)=-E(logP(x))，另有**相对熵/KL散度**来衡量两个分布之间的差异，或者说用Q(x)对P(x)建模的近似程度，![](https://render.githubusercontent.com/render/math?math=D_{KL}(P||Q)=\mathbb%20E_{x~P}[log\frac{P(x)}{Q(x)}]=\mathbb%20E_{x~P}[log{P(x)}-log{Q(x)}]=\sum_x{P(x)log[\frac{P(x)}{Q(x)}]})，注意这里x是满足真实概率分布P的，“真实”分布就是所有概率密度都分布在正确的类别上，即\[0, 0, ... , 1, ... ,0\]one-hot vector，这正是softmax中![](https://render.githubusercontent.com/render/math?math=p=\mathbb%201())的原因，**交叉熵**![](https://render.githubusercontent.com/render/math?math=H(P,Q)=H(x)%2BD_{KL}(P||Q)=-\mathbb%20E_{x~P}[logP(x)]%2B\mathbb%20E_{x~P}[log{P(x)}-log{Q(x)}]=\mathbb%20E_{x~P}[-log{Q(x)}])可以理解为信息熵和相对熵之和，那么由于真实分布的信息熵是个定值，最小化交叉熵的过程其实就是最小化两个分布之间的相对熵，即让两个分布尽可能相似/预测的概率分布尽可能接近真实概率分布。
++ **交叉熵损失函数（代价函数）**<br>即用交叉熵公式来算的损失函数，基本上是和softmax固定搭配同时出现的，有两个原因，一方面交叉熵损失函数需要输入一个概率，而softmax刚好可以提供这个概率；另一方面参见[softmax算法原理](#assignment1-softmax)，我写了很详细的证明，其中有一步，<br>![](https://render.githubusercontent.com/render/math?math=\begin{equation}\begin{aligned}\nabla_{w_k}L_i=\frac{\partial%20L_i}{\partial%20p_\beta}\frac{\partial%20p_\beta}{\partial%20s_m}\frac{\partial%20s_m}{\partial%20w_k}=-\sum^c_\beta{\p_{i,\beta}}\frac{1}{p_\beta}\times{\begin{cases}p_\beta-p_\beta^2%26\beta%20=m\\\\-p_\beta%20p_m%26\beta%20!=m\end{cases}}\times\mathbb1(m=k)x^{(i)}\end{aligned}\end{equation})，<br>可以发现前两个偏导正是交叉熵和softmax两个函数的偏导，其中pβ是刚好可以抵消的，如果没有softmax，求梯度过程中存在的1/pβ很容易导致溢出，总的来说，**softmax恰好填补了cross-entropy derivative numerically unstable(overflow)这个漏洞且满足了交叉熵的输入需求。**——这部分是我对softmax+cross-entropy-loss这个搭配的理解。
++ **到底为什么用交叉熵损失？**<br>**上面谈到了softmax/交叉熵的起源和理解，又谈到了两者搭配的优秀特性即总是共同出现的原因，这里如果想说明白交叉熵损失相较于MSE均方误差的优势，就要提到激活函数的概念**，上文中提到的softmax函数其实就是激活函数activation function，Lecture5里马上就会写到，简单来说，激活函数可以引入非线性因素，解决线性模型所不能解决的问题。当我们使用类似sigmoid（σ）的激活函数求梯度时，如果使用均方误差，梯度公式会是<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=(y_{pred}-y)\sigma^'\times%20x,\nabla_bL=\frac{\partial%20L}{\partial%20b}=(y_{pred}-y)\sigma^')，<br>这意味着损失函数的梯度和sigmoid的梯度是成正比的，<br><div align=center><img src="assets/sigmoid.png" width="50%" height="50%"></div><br>从上图的几种sigmoid函数图像可以看出，**sigmoid函数σ(z)在z很大或很小的时候由于sigmoid'极小，损失函数梯度都会非常小，即参数更新速度/训练速度（速率）很慢**，但实际上在初始化W后，打分很高或很低的情况时很常见的，**这时就会出现“错得越离谱，学得越慢”的自暴自弃现象**，是种很差的特性；同样是用sigmoid激活函数，如果用交叉熵损失，公式如下，<br>![](https://render.githubusercontent.com/render/math?math=\nabla_WL=\frac{\partial%20L}{\partial%20W}=x(\sigma-y),\nabla_bL=\frac{\partial%20L}{\partial%20b}=\sigma-y)，<br>相比之下，交叉熵损失中梯度大小只与z和真实值y相关，呈现出来的性质优于MSE，多分类问题也更倾向于应用交叉熵损失。
 
 ##### SVM vs. Softmax
 
@@ -321,9 +322,7 @@ SVM是个挺难懂的玩意儿，我最直观的理解是——在统计学习�
 <img src="assets/svmvssoftmax.png" width="50%" height="50%">
 </div>
 
-关键的区别在算法原理那里，svm如何拥有最大边界的良好特性？svm和softmax等线性分类器的得分是没有无定标的，难以直接解释，通常是多个类对比来看的，但是softmax函数可以将得分转化为解释性更强的概率；数值稳定的技巧？[损失函数那里](#损失函数)也需要重新写一下。
-
-svm为什么叫svm？softmax其实指的是归一化指数函数，svm难道指的就是合页损失的这种思想吗？softmax函数本身和交叉熵损失其实是分开的。
+直观，一目了然。
 
 ##### Linear Classifier Demo可视化参数影响及训练过程
 
@@ -393,3 +392,7 @@ lecture - assignment - report实在是太脱节了。
 \[12\] [Softmax损失函数及梯度的计算 - 杨勇](https://zhuanlan.zhihu.com/p/21485970)
 
 \[13\] [详解softmax函数以及相关求导过程 - 忆臻](https://zhuanlan.zhihu.com/p/25723112)（SCIR）
+
+\[14\] [多类分类下为什么用softmax而不是用其他归一化方法? - 各回答](https://www.zhihu.com/question/40403377)
+
+\[15\] [交叉熵损失函数相比平方差损失函数的优点？ - __鸿](https://blog.csdn.net/u014313009/article/details/51043064)
