@@ -13,3 +13,11 @@ Up to 2020-11-11, the following has been completed.
 - [Softmax Classifier](https://github.com/V2beach/cs231n/blob/main/assignment1/softmax.ipynb)
 - [Two-Layer Neural Network](https://github.com/V2beach/cs231n/blob/main/assignment1/two_layer_net.ipynb)
 - [Image Features](https://github.com/V2beach/cs231n/blob/main/assignment1/features.ipynb)
+
+
+### Assignment 2
+- [Fully Connected Networks](https://github.com/V2beach/CS231n/blob/main/assignment2/FullyConnectedNets.ipynb)
+- [Batch Normalization](https://github.com/V2beach/CS231n/blob/main/assignment2/BatchNormalization.ipynb)
+- [Dropout](https://github.com/V2beach/CS231n/blob/main/assignment2/Dropout.ipynb)
+- [Convolutional Networks](https://github.com/V2beach/CS231n/blob/main/assignment2/ConvolutionalNetworks.ipynb)
+- [Tensorflow](https://github.com/V2beach/CS231n/blob/main/assignment2/TensorFlow.ipynb) / [Pytorch](https://github.com/V2beach/CS231n/blob/main/assignment2/PyTorch.ipynb)
