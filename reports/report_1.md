@@ -52,11 +52,9 @@
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
 
-会将我学习到的，课上讲到的核心内容、自己的思考和理解、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花、边学边忘，参考资料都整理在文末，转载请注明出处。
+会将我学习到的，课上讲到的核心内容、自己的思考和理解、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花，参考资料都整理在文末，转载请注明出处。
 
 cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即用于视觉识别的卷积神经网络，Lecture 1\~4通过CV和ML基本概念及算法原理讲解了Visual Recognition问题的处理流程和学习DL必要的前置ML知识，我也趁这段时间，借助花书和统计学习方法恶补了必要的数学知识；Lecture 5\~end才从CNN讲起，进入课程主题。
-
-由于GitHub和知乎都不支持LaTeX Formula，只好选择用外部的公式渲染工具将源码转成图片，原公式会陆续上传到[博客](blog.v2beach.cn)。
 
 # Lecture2 Image Classification
 
@@ -469,7 +467,7 @@ sigmoid其实可以被整合成一个计算单元，正向的计算公式为σ(x
 除此之外，跟svm和softmax的区别无非是多了一层ReLU，链式法则多接几个偏导，再重复写一次就太冗余了，所以详见[代码](https://github.com/V2beach/cs231n/blob/main/assignment1/cs231n/classifiers/neural_net.py)。
 
 # 写在后面
-用github render渲染出来的公式必然没有直接用mathjax那么整齐，是没办法的事，我会把report再在blog.v2beach.cn上传一遍。
+用github render渲染出来的公式必然没有直接用mathjax那么整齐，github和知乎都不支持也是没办法的事，我会把report再在blog.v2beach.cn上传一遍。
 
 # References
 \[1\] [L1-norm和L2-norm两种范数的特点和区别？- Andy Yang](https://www.zhihu.com/question/26485586/answer/616029832)
