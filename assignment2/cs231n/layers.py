@@ -28,8 +28,7 @@ def affine_forward(x, w, b):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    x = x.reshape((x.shape[0], -1))
-    out = x.dot(w) + b
+    out = x.reshape((x.shape[0], -1)).dot(w) + b
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -62,7 +61,9 @@ def affine_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = dout.dot(w.T).reshape(x.shape) # 具体会如何reshape？从来没看过内部是怎么实现的，看一看
+    dw = x.reshape((x.shape[0], -1)).T.dot(dout)
+    db = np.sum(dout, axis=0)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -88,7 +89,8 @@ def relu_forward(x):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # out = (x > 0) * x # x > 0 is a boolean array，这里如果写x[x > 0]就变成一维数组了
+    out = np.maximum(0, x) # 当然也可以这么写，但不知道哪个更快
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -115,7 +117,7 @@ def relu_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dx = (x > 0) * dout # 注意这里其实x > 0和out > 0是等价的，上个ass的代码我就用的是正向的输出大于0
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -195,7 +197,14 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        sample_mean = np.mean(x, axis=0)
+        sample_variance = np.var(x, axis=0)
+        running_mean = momentum * running_mean + (1 - momentum) * sample_mean # 到底为什么这么算mini-batch
+        running_var = momentum * running_var + (1 - momentum) * sample_variance # 要怎么结合Justin说的训练过程增加随机性和噪声，预测时消除，以提高泛化能力的思路？
+        estimated_x = (x - sample_mean) / np.sqrt(sample_variance + eps)
+        out = gamma * estimated_x + beta
+
+        cache = (gamma, beta, eps, x, estimated_x, sample_mean, sample_variance)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -210,7 +219,8 @@ def batchnorm_forward(x, gamma, beta, bn_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        estimated_x = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * estimated_x + beta
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -252,7 +262,17 @@ def batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    # 原来跟alt写反了，这里是写完了alt才来补的，其实就是把下面的式子拆成各个相关量之间的导数相乘
+    gamma, beta, eps, x, estimated_x, sample_mean, sample_variance = cache
+    dx_estimated = dout * gamma
+    dgamma = np.sum(dout * estimated_x, axis=0)
+    dbeta = np.sum(dout, axis=0)
+    destimatedx_variance = - (x - sample_mean) * np.power(sample_variance + eps, -1.5) * 0.5 # 计算的时候注意尽量避免除法
+    destimatedx_mean = -1 / np.sqrt(sample_variance + eps)
+    destimatedx_x = 1 / np.sqrt(sample_variance + eps)
+    dvariance_x = 2 * (x - sample_mean) / x.shape[0]
+    dmean_x = 1 / x.shape[0]
+    dx = dx_estimated * destimatedx_x + np.sum(dx_estimated * destimatedx_variance, axis=0) * dvariance_x + np.sum(dx_estimated * destimatedx_mean, axis=0) * dmean_x
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -287,7 +307,13 @@ def batchnorm_backward_alt(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    gamma, beta, eps, x, estimated_x, sample_mean, sample_variance = cache # 这段公式的推导就直接在report里让看求导术吧，我的求导思路也是从这里获得的启发，指多个变量出现导数累加（甚至有完整答案，重推一边这种造轮子的行为就不再做了）。
+    dx_estimated = dout * gamma # gamma 1 * D, x N * D, x_estimated N * D, 可以直接广播吗？我去BN.ipynb试一下，另外为什么作为系数的gamma是逐元素乘而不是矩阵乘？没懂
+    dgamma = np.sum(dout * estimated_x, axis=0) # 所以，为啥俩都是逐元素乘呢？不该是矩阵乘吗？这个问题我会在report里详细写一下，被卡还是因为没理解透。相较assignment1的必须吃透的基础，assignment2涵盖的内容是这个课程的核心了，更重要，也必须掌握。
+    dbeta = np.sum(dout, axis=0) 
+    dvariance = - np.sum(dx_estimated * (x - sample_mean) * np.power(sample_variance + eps, -1.5) / 2, axis=0) # x N * D, sample_mean 1 * D
+    dmean = np.sum(- dx_estimated / np.sqrt(sample_variance + eps), axis=0)
+    dx = dx_estimated / np.sqrt(sample_variance + eps) + dvariance * 2 * (x - sample_mean) / x.shape[0] + dmean / x.shape[0] # 这个地方我认为matrix vector derivatives for machine learning里面的\sum是错的
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -323,17 +349,21 @@ def layernorm_forward(x, gamma, beta, ln_param):
     eps = ln_param.get("eps", 1e-5)
     ###########################################################################
     # TODO: Implement the training-time forward pass for layer norm.          #
-    # Normalize the incoming data, and scale and  shift the normalized data   #
-    #  using gamma and beta.                                                  #
+    # Normalize the incoming data, and scale and shift the normalized data    #
+    # using gamma and beta.                                                   #
     # HINT: this can be done by slightly modifying your training-time         #
-    # implementation of  batch normalization, and inserting a line or two of  #
+    # implementation of batch normalization, and inserting a line or two of   #
     # well-placed code. In particular, can you think of any matrix            #
     # transformations you could perform, that would enable you to copy over   #
     # the batch norm code and leave it almost unchanged?                      #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x_mean = np.mean(x, axis=0)
+    x_variance = np.var(x, axis=0)
+    estimated_x = (x - x_mean) / np.sqrt(x_variance + eps)
+    out = gamma * estimated_x + beta
+    cache = (gamma, beta, eps, x, estimated_x, x_mean, x_variance)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -368,7 +398,13 @@ def layernorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    gamma, beta, eps, x, estimated_x, sample_mean, sample_variance = cache
+    dx_estimated = dout * gamma
+    dgamma = np.sum(dout * estimated_x, axis=0)
+    dbeta = np.sum(dout, axis=0) 
+    dvariance = - np.sum(dx_estimated * (x - sample_mean) * np.power(sample_variance + eps, -1.5) / 2, axis=0)
+    dmean = np.sum(- dx_estimated / np.sqrt(sample_variance + eps), axis=0)
+    dx = dx_estimated / np.sqrt(sample_variance + eps) + dvariance * 2 * (x - sample_mean) / x.shape[0] + dmean / x.shape[0]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -417,7 +453,8 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        mask = np.random.rand(*x.shape) < p # p是保留神经元的概率，所以大于等于p的置为0
+        out = x * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -429,7 +466,7 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out = x * p
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################
@@ -460,7 +497,7 @@ def dropout_backward(dout, cache):
         #######################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dx = dout * mask
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         #######################################################################

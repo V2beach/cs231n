@@ -7,7 +7,7 @@ from .layers import *
 from .fast_layers import *
 
 
-def affine_relu_forward(x, w, b):
+def affine_relu_forward(x, w, b): # 这里的写法包括注释和layer的嵌套都得学习一下
     """
     Convenience layer that perorms an affine transform followed by a ReLU
 
@@ -108,3 +108,18 @@ def conv_relu_pool_backward(dout, cache):
     da = relu_backward(ds, relu_cache)
     dx, dw, db = conv_backward_fast(da, conv_cache)
     return dx, dw, db
+
+# 自己写一个affine_batchnorm_relu层，这种模块化的写法真爽
+def affine_batchnorm_relu_forward(x, w, b, gamma, beta, bn_param):
+    out1, fc_cache = affine_forward(x, w, b)
+    out2, bn_cache = batchnorm_forward(out1, gamma, beta, bn_param)
+    out3, relu_cache = relu_forward(out2)
+    cache = (fc_cache, bn_cache, relu_cache)
+    return out3, cache
+
+def affine_batchnorm_relu_backward(dout, cache):
+    fc_cache, bn_cache, relu_cache = cache
+    dout3 = relu_backward(dout, relu_cache)
+    dout2, dgamma, dbeta = batchnorm_backward(dout3, bn_cache)
+    dx, dw, db = affine_backward(dout2, fc_cache)
+    return dx, dw, db, dgamma, dbeta

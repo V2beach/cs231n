@@ -12,7 +12,7 @@ class TwoLayerNet(object):
     softmax loss that uses a modular layer design. We assume an input dimension
     of D, a hidden dimension of H, and perform classification over C classes.
 
-    The architecure should be affine - relu - affine - softmax.
+    The architecture should be affine - relu - affine - softmax.
 
     Note that this class does not implement gradient descent; instead, it
     will interact with a separate Solver object that is responsible for running
@@ -55,7 +55,10 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        self.params['W1'] = np.random.normal(loc=0.0, scale=weight_scale, size=(input_dim, hidden_dim))
+        self.params['b1'] = np.zeros((hidden_dim))
+        self.params['W2'] = np.random.normal(loc=0.0, scale=weight_scale, size=(hidden_dim, num_classes))
+        self.params['b2'] = np.zeros((num_classes))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -88,7 +91,16 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # 学习搭积木的第一步
+        out_1, cache_1 = affine_relu_forward(X, self.params['W1'], self.params['b1'])
+        out_2, cache_2 = affine_forward(out_1, self.params['W2'], self.params['b2'])
+        scores = out_2
+
+        # 下面这一些全都包含在softmax_loss里面了
+        # out_2_stable = out_2 - np.max(out_2, axis=1)
+        # out_2_stable_exp = np.exp(out_2_stable)
+        # out_2_stable_exp_sum = np.sum(out_2_stable_exp, axis=1)
+        # out_3 = out_2_stable_exp / out_2_stable_exp_sum
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -112,7 +124,15 @@ class TwoLayerNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # 正向完了再反向，合在一起算的不是score和loss grad，是loss和grad
+        loss, grad_upstream = softmax_loss(scores, y) # grad_upstream is dx3
+        loss = loss + 0.5 * self.reg * (np.sum(self.params['W1'] * self.params['W1']) + np.sum(self.params['W2'] * self.params['W2']))
+        dx2, dw2, db2 = affine_backward(grad_upstream, cache_2)
+        dx1, dw1, db1 = affine_relu_backward(dx2, cache_1)
+        grads['W1'] = dw1 + self.reg * self.params['W1'] # 这一步正则求出来的梯度别忘记加！
+        grads['b1'] = db1
+        grads['W2'] = dw2 + self.reg * self.params['W2']
+        grads['b2'] = db2
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -192,7 +212,15 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        dims = [input_dim] + hidden_dims + [num_classes]
+        for nl in range(self.num_layers):
+            self.params['W%d' % (nl + 1)] = np.random.normal(loc=0.0, scale=weight_scale, size=(dims[nl], dims[nl + 1]))
+            self.params['b%d' % (nl + 1)] = np.zeros(dims[nl + 1])
+        
+        if self.normalization != None:
+            for nl in range(self.num_layers - 1):
+              self.params['gamma%d' % (nl + 1)] = np.ones(dims[nl + 1])
+              self.params['beta%d' % (nl + 1)] = np.zeros(dims[nl + 1])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -254,7 +282,31 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        outemp = X
+        caches = [()] # cache是反向的时候才会用到的，最后维度是num_layers
+        cachemp = None
+        caches_dropout = [()]
+        cachemp_dropout = None
+        # forward pass FullyConnectedNets without batch normalization or dropout
+        if self.normalization == None:
+            for nl in range(1, self.num_layers):
+                outemp, cachemp = affine_relu_forward(outemp, self.params['W%d' % nl], self.params['b%d' % nl])
+                caches.append(cachemp)
+                if self.use_dropout:
+                    outemp, cachemp_dropout = dropout_forward(outemp, self.dropout_param)
+                    caches_dropout.append(cachemp_dropout)
+            outemp, cachemp = affine_forward(outemp, self.params['W%d' % self.num_layers], self.params['b%d' % self.num_layers])
+            scores = outemp
+        # 用batchnorm_forward和batchnorm_backward_alt写了一个affine_batchnorm_relu
+        elif self.normalization == 'batchnorm':
+            for nl in range(1, self.num_layers):
+                outemp, cachemp = affine_batchnorm_relu_forward(outemp, self.params['W%d' % nl], self.params['b%d' % nl], self.params['gamma%d' % nl], self.params['beta%d' % nl], self.bn_params[nl - 1])
+                caches.append(cachemp)
+                if self.use_dropout:
+                    outemp, cachemp_dropout = dropout_forward(outemp, self.dropout_param)
+                    caches_dropout.append(cachemp_dropout)
+            outemp, cachemp = affine_forward(outemp, self.params['W%d' % self.num_layers], self.params['b%d' % self.num_layers])
+            scores = outemp
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -272,16 +324,40 @@ class FullyConnectedNet(object):
         # data loss using softmax, and make sure that grads[k] holds the gradients #
         # for self.params[k]. Don't forget to add L2 regularization!               #
         #                                                                          #
-        # When using batch/layer normalization, you don't need to regularize the scale   #
-        # and shift parameters.                                                    #
+        # When using batch/layer normalization, you don't need to regularize the   #
+        # scale and shift parameters.                                              #
         #                                                                          #
         # NOTE: To ensure that your implementation matches ours and you pass the   #
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+      
+        # 从params里面提取参数的时候改成pop()而不是用index是不是好一点？
+        loss, doutemp = softmax_loss(scores, y)
+        doutemp, dw, db = affine_backward(doutemp, cachemp)
+        grads['W%d' % self.num_layers] = dw + self.reg * self.params['W%d' % self.num_layers]
+        grads['b%d' % self.num_layers] = db
+        loss += 0.5 * self.reg * np.sum(self.params['W%d' % self.num_layers] * self.params['W%d' % self.num_layers])
 
-        pass
+        if self.normalization == None:
+            for nl in range(1, self.num_layers)[::-1]:
+                if self.use_dropout:
+                    doutemp = dropout_backward(doutemp, caches_dropout[nl])
+                doutemp, dw, db = affine_relu_backward(doutemp, caches[nl])
+                grads['W%d' % nl] = dw + self.reg * self.params['W%d' % nl]
+                grads['b%d' % nl] = db
+                loss += 0.5 * self.reg * np.sum(self.params['W%d' % nl] * self.params['W%d' % nl])
+        elif self.normalization == 'batchnorm':
+            for nl in range(1, self.num_layers)[::-1]:
+                if self.use_dropout:
+                    doutemp = dropout_backward(doutemp, caches_dropout[nl])
+                doutemp, dw, db, dgamma, dbeta = affine_batchnorm_relu_backward(doutemp, caches[nl])
+                grads['W%d' % nl] = dw + self.reg * self.params['W%d' % nl]
+                grads['b%d' % nl] = db
+                grads['gamma%d' % nl] = dgamma # 只加了两句，大成功！要重新理解一遍自己的代码（摸了三天全忘了）
+                grads['beta%d' % nl] = dbeta
+                loss += 0.5 * self.reg * np.sum(self.params['W%d' % nl] * self.params['W%d' % nl])
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

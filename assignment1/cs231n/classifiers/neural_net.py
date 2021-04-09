@@ -126,7 +126,7 @@ class TwoLayerNet(object):
         # 第二层的梯度
         Loss_partial_W2 = h_scores.T.dot(probability) + 2 * reg * W2 # H x C
         Loss_partial_h = probability.dot((W2.T)) # M x H
-        Loss_partial_b2 = np.sum(probability, axis=0) # M x C
+        Loss_partial_b2 = np.sum(probability, axis=0) # M x C 这里理解错了，之后会改过来并在report的softmax公式那里(x w b三个都没有写Li怎么到L)记录新的理解
         grads['W2'] = Loss_partial_W2
         grads['b2'] = Loss_partial_b2
 

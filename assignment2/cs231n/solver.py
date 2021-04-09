@@ -247,7 +247,7 @@ class Solver(object):
             scores = self.model.loss(X[start:end])
             y_pred.append(np.argmax(scores, axis=1))
         y_pred = np.hstack(y_pred)
-        acc = np.mean(y_pred == y)
+        acc = np.mean(y_pred == y) # 没太看明白这里为什么这样做
 
         return acc
 
@@ -257,7 +257,7 @@ class Solver(object):
         """
         num_train = self.X_train.shape[0]
         iterations_per_epoch = max(num_train // self.batch_size, 1)
-        num_iterations = self.num_epochs * iterations_per_epoch
+        num_iterations = self.num_epochs * iterations_per_epoch # 果然是只看迭代次数不看样本是否重复，这样好吗？万一迭代1000次全部抽到同一个数据点呢
 
         for t in range(num_iterations):
             self._step()

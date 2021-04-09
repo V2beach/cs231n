@@ -4,7 +4,9 @@
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
 
-会将我学习到的，课上讲到的核心内容、自己的思考和理解、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花，参考资料都整理在文末，转载请注明出处。
+会将我学习到的，课上讲到的核心内容、自己的思考和理解、部分公式的推导、Assignments的代码原理和实现过程整理到本篇及后续的学习报告，以防止走马观花。
+
+参考资料都整理在文末，转载请注明出处。
 
 cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即用于视觉识别的卷积神经网络，Lecture 1\~4通过CV和ML基本概念及算法原理讲解了Visual Recognition问题的处理流程和学习DL必要的前置ML知识，我也趁这段时间，借助花书和统计学习方法恶补了必要的数学知识；Lecture 5\~end才从CNN讲起，进入课程主题。
 
@@ -35,7 +37,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 
 通过slide里这张图，可以直观地理解其定义和差异。
 
-理解上图——标注和公式不必说，图像中的正方形图线和圆形图线，其实可以理解为d(I1, I2)确定的情况下，将I1当作坐标原点，I2的所有可能取值，左右公式分别为很熟悉的$d_1=|x_1-x_0|+|y_1-y_0|, \ \ d_2=\sqrt{(x_1-x_0)^2+(y_1-y_0)^2}$。
+理解上图——标注和公式不必说，图像中的正方形图线和圆形图线，其实可以理解为d(I1, I2)确定的情况下，将I1当作坐标原点时I2的所有可能取值，左右公式分别为很熟悉的$d_1=|x_1-x_0|+|y_1-y_0|, \ \ d_2=\sqrt{(x_1-x_0)^2+(y_1-y_0)^2}$。(I1(x0, y0), I2(x1, y1))
 
 其传达的意思举一个二维例子就很好理解，比如$\vec{I_1}=(0, 1),\vec{I_2}=(1,0),\vec{I_2}-\vec{I_1}=(1,-1)\Rightarrow d_1=2,d_2=2$，如果将坐标系逆时针转动45°，$\vec{I_1}=(\sqrt{2}/2,\sqrt{2}/2),\vec{I_2}=(-\sqrt{2}/2,\sqrt{2}/2),\vec{I_2}-\vec{I_1}=(-\sqrt{2},0)\Rightarrow d_1=\sqrt{2},d_2=2$，旋转坐标系会导致L1改变，但L2不变。
 
