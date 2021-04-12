@@ -1,6 +1,6 @@
 # Lecture1 Course Introduction
 
-课程相关的[Slides, Notes, Papers](http://cs231n.stanford.edu/syllabus.html)及[花书](https://mitpress.mit.edu/books/deep-learning)作为主要参考材料。
+课程相关的[Slides, Notes, Papers](http://cs231n.stanford.edu/)及[花书](https://mitpress.mit.edu/books/deep-learning)作为主要参考材料。
 
 Lecture1根据[Course Materials](https://cs231n.github.io/python-numpy-tutorial/)完成了[Code of Python Numpy Tutorial](https://github.com/V2beach/cs231n/tree/main/python-numpy-tutorial)。
 
@@ -124,7 +124,7 @@ cs231n的课程名是Convolutional Neural Networks for Visual Recognition，即�
 如上文所说，损失函数衡量的是对学习到的W和其他超参构成的模型的不满意程度，即预测值和真实值之间的差距，主要讨论多类支持向量机损失Multiclass Support Vector Machine Loss（其实就是合页损失）和Softmax分类器的softmax函数+交叉熵损失Cross Entropy两种。可以发现，对于线性分类器来说，其他部分（模型空间，梯度下降算法）千篇一律，损失函数才是其核心。
 
 ##### 再谈正则化
-[正则化(Regularization)](#向量范数度量图片差异)上文已经写过一些范数相关的内容，要理解正则化如何防止过拟合就要理解过拟合是什么，关于过拟合发生的本质原因有很多种解释，我对这个问题的理解停留在cs229的程度，吴恩达老师这部分讲得特别好，非常通俗易懂——
+[正则化(Regularization)](#向量范数度量图片差异)上文已经写过一些范数相关的内容，要理解正则化如何防止过拟合就要理解过拟合是什么，关于过拟合发生的本质原因有很多种解释，我对这个问题的理解停留在[cs229 Machine Learning](http://cs229.stanford.edu/)的程度，吴恩达老师这部分讲得特别好，非常通俗易懂——
 
 简单来说，过拟合是一种在训练集上损失很小拟合程度很高但在测试集上准确率很低预测效果很差的现象，其原因在于模型过于复杂过于贴合训练集导致泛化到其他数据集的能力差，下面几张图都来自cs229的slides和吴老师手写的notes，
 
@@ -155,7 +155,9 @@ $L=\underbrace{\frac{1}{N}\sum_i L_i}_\text{data loss} + \underbrace{\lambda R(W
 详细的损失函数、包括下面梯度计算的推导过程都在下面两个Assignment1的subtask里面。
 
 ### 梯度的理解、最优化原理、梯度计算、梯度下降
-关于梯度的内容篇幅最长，原因是这部分内容完全是围绕梯度展开的，**把梯度学透，后面的问题和困难基本上都能迎刃而解**，下面结合[references](#references)里提到的部分资料（不完全赞同他们的理解）分享我对这个问题的理解。
+根据[线性分类器](#线性分类器)和[损失函数](#损失函数)的学习可以发现，要得到最强的预测能力，就要有最好的打分函数，就要计算出一个让打分函数最优的W，要做到这一点，就需要最小化度量预测值和真实值之间的差距的关于W的损失函数，这就是最优化，而学习优化过程必然要讨论梯度计算。
+
+关于梯度的内容篇幅最长，原因是这部分内容完全是围绕梯度展开的，**把梯度学透，后面的问题和困难基本上都能迎刃而解**，下面结合[references](#references)里提到的部分资料（不完全赞同他们的理解）分享我对这个问题的理解。(slope = tan(theta))
 + 梯度
     + 高维微分——微分是微小的Δy，而导数是Δy/Δx的极限，可微一定可导，因此，下文可能会不加推导的从可微过渡到可导。以$z=f(x,y)$为例，过去求微分指的仅是对x或y的偏导$f_x'(x, y)$或$f_y'(x,y)$，或是全导$dz|_{x_0,y_0}=f'(x_0,y_0)=f'_x(x_0,y_0)\Delta x + f'_y(x_0,y_0)\Delta y$，只限于沿坐标轴方向求微分求导，但实际上在函数的一个可微处沿坐标系内任何一个方向都可以求其导数，故引入方向向量和方向导数的概念以便后续讨论。
     + 方向导数——同样以三维空间及二维自变量为例，$y=f(x_0,x_1)$，$x_0,x_1$轴基向量分别为$\vec{i},\vec{j}$，设方向向量$\vec{v}$为任意方向的单位向量，这时有$f_v:t\rightarrow f(\vec{x} + t\vec{v})$，x为一个二维向量，为什么f是关于t的映射呢，这里的v范数为1，只用来控制方向，而t才是真正控制大小的自变量，如果$\vec{v}$恰好等于$\vec{i}$，那么t其实就是$\Delta x_0$，而f也变成对于$x_0$的偏函数$f_v=(x_0 + \Delta x_0,x_1)$了。设方向向量与$x_0$轴正向夹角为θ，则向量$\vec{v}$可被分解为$cos\theta\vec{i} + sin\theta\vec{j}$，这时上述映射也变成了$f_v:t\rightarrow f(x_0 + sin\theta t,x_1 + cos\theta t)$，那么沿着$\vec{v}$方向的方向导数就得到了$\lim_{t\rightarrow 0}{\frac{f(x_{0} + tcos\theta , y_{0} + tsin\theta)-f(x_{0} , y_{0})}{t}}$，将这个极限用Nabla劈算子定义一下向量微分，$\nabla_{v}f(x , y)=f'_{x}(x , y)cos\theta+f'_{y}(x , y)sin\theta$。（从几何意义来理解，三维空间里，方向导数就定义为这个公式，不过不同于另外二者求的是切线斜率，全导数的计算是关于函数曲面的切平面的）
@@ -189,7 +191,7 @@ $L=\underbrace{\frac{1}{N}\sum_i L_i}_\text{data loss} + \underbrace{\lambda R(W
 
 + 训练：
     + 根据$S=f(X ; W)=XW$或$s_j=f(x^{(i)},W)_j$给m个样本根据n个特征分别打出c个类别的得分。
-    + 计算损失，SVM用的是合页损失，公式是$L=\frac{1}{N}\sum_i\sum_{j\neq y^{(i)}}\left[\max(0,s_j-s_{y^{(i)}} + \Delta)\right] + \lambda\sum_k\sum_l W_{k,l}^2$，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，所以每个样本预测的损失就是-(正确分类yi得分-(错误分类j得分+边界))的和$L_i=\sum_{j\neq y^{(i)}}\max(0,x^{(i)}w_j-x^{(i)}w_{y^{(i)}} + \Delta)$，这也是计算梯度时将主要分析的式子，有关svm/softmax的完整理解请见[理解svm和softmax](#svm和softmax比较及linear-classifier-demo)。
+    + 计算损失，SVM用的是合页损失，公式是$L=\frac{1}{N}\sum_i\sum_{j\neq y^{(i)}}\left[\max(0,s_j-s_{y^{(i)}} + \Delta)\right] + \lambda\sum_k\sum_l W_{k,l}^2$，公式必须要逐字母地读懂，比较好理解，其核心思想在于，SVM的合页损失函数想要SVM在正确分类上的得分始终比不正确分类上的得分高出一个边界值Δ，所以每个样本预测的损失就是-(正确分类yi得分-(错误分类j得分+边界))的和$L_i=\sum_{j\neq y^{(i)}}\max(0,x^{(i)}w_j-x^{(i)}w_{y^{(i)}} + \Delta)$，这也是计算梯度时将主要分析的式子，有关svm/softmax的完整理解请见[理解svm和softmax](#svm和softmax比较及linear-classifier-demo)。
     + 计算梯度，只要不犯像我一样的错误，看到矩阵求导就想系统地学矩阵求导术，按照**碰到矩阵求梯度就逐元素（或者逐向量）求导**的思路，这里的梯度还是比较好求的，将式子展开比如只有三个类别1,2,3且正确分类是类别2，得到$L_i=\max(0,x^{(i)}w_1-x^{(i)}w_{2} + \Delta) + \max(0,x^{(i)}w_3-x^{(i)}w_{2} + \Delta)$，可以得到当$s_j^{(i)}-s_{y^{(i)}}^{(i)} + \Delta >0$时，对W求梯度及对W内的向量w1,w2,w3求导，结果会是$\nabla_{w_{y^{(1)}}}L_i=x^{(i)},\nabla_{w_{y^{(2)}}}L_i=-2x^{(i)},\nabla_{w_{y^{(3)}}}L_i=x^{(i)}$，结合上述易得式$\nabla_{w_{y^{(i)}}}L_i=-\left(\sum_{j\neq y^{(i)}}\mathbb 1(s_j^{(i)}-s_{y^{(i)}}^{(i)} + \Delta >0)\right)x^{(i)}$，$\nabla_{w_{j}}L_i=\mathbb 1(s_j^{(i)}-s_{y^{(i)}}^{(i)} + \Delta >0)x^{(i)}$，这个梯度公式结合上面我举的例子就很好理解，且由于复合函数较为简单，就没有费力用链式法则而是直接展开，其中花体1是示性函数中的指示函数，括号内容为真则为1，否则为0。
     + 梯度下降，Loop——W减$\nabla_WL$\* learning_rate后重复上述步骤。
 + 预测：

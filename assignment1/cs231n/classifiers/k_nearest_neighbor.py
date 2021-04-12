@@ -81,7 +81,7 @@ class KNearestNeighbor(object):
                 # 还可以为今后学生自己书写的代码提供一个非常漂亮的模板，简直完美~
                 # 每两个图片的维度都是相同的，所以直接相减，求平方和，开方就行，想一下求二维点的距离也确实是这么操作的，最后开方是因为z^2 = x^2 + y^2
                 
-                dists[i, j] = np.sqrt(np.sum(np.square(self.X_train[j] - X[i])))
+                dists[i, j] = np.sqrt(np.sum(np.square(self.X_train[j] - X[i]))) # 就相当于计算这个3072维点和5000个3072维点之间的距离，不是想象的2维坐标3维坐标系，是高维坐标系
 
                 # pass
 
@@ -108,7 +108,7 @@ class KNearestNeighbor(object):
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
             
             # print((self.X_train - X[i]).shape) # (5000, 3072) dists一行是test中一个点相对于train所有点的距离，所以该是(1, 5000)的向量，那么下式是怎么转换成行向量的呢？
-            dists[i] = np.sqrt(np.sum(np.square(self.X_train - X[i]), axis=1)) # axis=0是列相加，axis=1是行相加，同一个图片的所有像素是1x3072，在同一行
+            dists[i] = np.sqrt(np.sum(np.square(self.X_train - X[i]), axis=1)) # axis=0是列相加，axis=1是行相加，意思是axis=哪一维就让哪一维消失！同一个图片的所有像素是1x3072，在同一行
             # print(dists[i].shape) # (5000, )，所以其实是np.sum加和后向量变成一维，而numpy里默认是行向量，如果需要列向量需要reshape手动转，不能.T
             
             # pass
@@ -195,6 +195,8 @@ class KNearestNeighbor(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
+            # 这一片只要对照着report读一下就一目了然，argsort，arg-->labels，bincount，argmax。
+            
             # 然后找出k个里面出现次数最高的一个类别，即投票
             # 关于bincount函数，这个作者讲得非常详细了https://blog.csdn.net/xlinsist/article/details/51346523 ，整理report的时候结合自己写的代码把这个再捋一遍，用熟
             # 而argmax返回的恰好是第一个最大值的下标！恰好是第一个，也就是较小的
@@ -206,7 +208,7 @@ class KNearestNeighbor(object):
             y_i_pred = vote_y_order[0]
             for j in range(0, size):
                 if bins[y_i_pred] == bins[vote_y_order[j]]:
-                    y_i_pred = min(y_i_pred, vote_y_order[j]) # 选一个类别idx更小的
+                    y_i_pred = min(y_i_pred, vote_y_order[j]) # 如果两个出现次数相等的话选一个类别**idx更小的**
             y_pred[i] = y_i_pred
 
             y_pred[i] = np.argmax(np.bincount(closest_y)) # 上面那一片实现的就是这个函数的一小部分，两种结果相同，这种写法更好，因为numpy内部应该会有优化
