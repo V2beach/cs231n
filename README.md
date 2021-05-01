@@ -1,6 +1,6 @@
 # cs231n Assignments Solutions and Reports - Spring 2020
 
-Recently, I have been taking the course of Stanford [CS231n: Convolutional Neural Networks for Visual Recognition](http://cs231n.stanford.edu/), and I will keep updating study reports and assignments solutions in this repo.
+Recently, I have been taking the course of Stanford [CS231n: Convolutional Neural Networks for Visual Recognition](http://cs231n.stanford.edu/), and I will keep updating study reports and assignments solutions in this repo. [Here] is the official repo.
 
 ### Reports
 - [Lecture 1~4 report](https://github.com/V2beach/cs231n/blob/main/reports/report_1/report_1.md)(github-render.md, mathjax.md, mathjax.pdf)
