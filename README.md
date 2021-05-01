@@ -7,7 +7,7 @@ Recently, I have been taking the course of Stanford [CS231n: Convolutional Neura
 - [Lecture 5~9 report](https://github.com/V2beach/cs231n/tree/main/reports/report_2)(almost done)
 - Lecture 10~end report(undone)
 
-### Assignment 1
+### Assignment 1(Local Development)
 - [k-Nearest Neighbor classifier](https://github.com/V2beach/cs231n/blob/main/assignment1/knn.ipynb)
 - [Training a Support Vector Machine](https://github.com/V2beach/cs231n/blob/main/assignment1/svm.ipynb)
 - [Implement a Softmax classifier](https://github.com/V2beach/cs231n/blob/main/assignment1/softmax.ipynb)
@@ -15,14 +15,14 @@ Recently, I have been taking the course of Stanford [CS231n: Convolutional Neura
 - Higher Level Representations: [Image Features](https://github.com/V2beach/cs231n/blob/main/assignment1/features.ipynb)
 
 
-### Assignment 2(almost done)
+### Assignment 2(Local Development)
 - [Fully-connected Neural Network](https://github.com/V2beach/CS231n/blob/main/assignment2/FullyConnectedNets.ipynb)
 - [Batch Normalization](https://github.com/V2beach/CS231n/blob/main/assignment2/BatchNormalization.ipynb)
 - [Dropout](https://github.com/V2beach/CS231n/blob/main/assignment2/Dropout.ipynb)
 - [Convolutional Networks](https://github.com/V2beach/CS231n/blob/main/assignment2/ConvolutionalNetworks.ipynb)
 - [Pytorch](https://github.com/V2beach/CS231n/blob/main/assignment2/PyTorch.ipynb) / [Tensorflow](https://github.com/V2beach/CS231n/blob/main/assignment2/TensorFlow.ipynb) on CIFAR-10
 
-### Assignment 3(undone)
+### Assignment 3(Google Colaboratory)
 - Image Captioning with Vanilla RNNs
 - Image Captioning with LSTMs
 - Network Visualization: Saliency maps, Class Visualization, and Fooling Images
