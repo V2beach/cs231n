@@ -1,13 +1,13 @@
 # cs231n Assignments Solutions and Reports - Spring 2020
 
-Recently, I have been taking the course of Stanford [CS231n: Convolutional Neural Networks for Visual Recognition](http://cs231n.stanford.edu/), and I will keep updating study reports and assignments solutions in this repo.
+Recently, I have been taking the course of Stanford [CS231n: Convolutional Neural Networks for Visual Recognition](http://cs231n.stanford.edu/), and I will keep updating study reports and assignments solutions in this repo. [Here](https://github.com/cs231n/cs231n.github.io) is the official repo.
 
 ### Reports
 - [Lecture 1~4 report](https://github.com/V2beach/cs231n/blob/main/reports/report_1/report_1.md)(github-render.md, mathjax.md, mathjax.pdf)
 - [Lecture 5~9 report](https://github.com/V2beach/cs231n/tree/main/reports/report_2)(almost done)
 - Lecture 10~end report(undone)
 
-### Assignment 1
+### Assignment 1(Local Development)
 - [k-Nearest Neighbor classifier](https://github.com/V2beach/cs231n/blob/main/assignment1/knn.ipynb)
 - [Training a Support Vector Machine](https://github.com/V2beach/cs231n/blob/main/assignment1/svm.ipynb)
 - [Implement a Softmax classifier](https://github.com/V2beach/cs231n/blob/main/assignment1/softmax.ipynb)
@@ -15,14 +15,14 @@ Recently, I have been taking the course of Stanford [CS231n: Convolutional Neura
 - Higher Level Representations: [Image Features](https://github.com/V2beach/cs231n/blob/main/assignment1/features.ipynb)
 
 
-### Assignment 2(almost done)
+### Assignment 2(Local Development)
 - [Fully-connected Neural Network](https://github.com/V2beach/CS231n/blob/main/assignment2/FullyConnectedNets.ipynb)
 - [Batch Normalization](https://github.com/V2beach/CS231n/blob/main/assignment2/BatchNormalization.ipynb)
 - [Dropout](https://github.com/V2beach/CS231n/blob/main/assignment2/Dropout.ipynb)
 - [Convolutional Networks](https://github.com/V2beach/CS231n/blob/main/assignment2/ConvolutionalNetworks.ipynb)
 - [Pytorch](https://github.com/V2beach/CS231n/blob/main/assignment2/PyTorch.ipynb) / [Tensorflow](https://github.com/V2beach/CS231n/blob/main/assignment2/TensorFlow.ipynb) on CIFAR-10
 
-### Assignment 3(undone)
+### Assignment 3(Google Colaboratory)
 - Image Captioning with Vanilla RNNs
 - Image Captioning with LSTMs
 - Network Visualization: Saliency maps, Class Visualization, and Fooling Images
